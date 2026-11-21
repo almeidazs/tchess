@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,17 +14,10 @@ import (
 // lowTime is when a clock turns red and the warning sound plays.
 const lowTime = 10 * time.Second
 
-// saveErrMsg reports that the preferences could not be written.
-type saveErrMsg struct{ err error }
-
-// saver writes the preferences in the background. Saves may finish out of
-// order, so each carries a sequence number and older ones are dropped.
+// saver writes the preferences in the background, in order.
 type saver struct {
 	fn func(config.Config) error
-
-	mu   sync.Mutex
-	seq  int // last sequence number handed out (update loop only)
-	done int // last sequence number written
+	w  serial
 }
 
 // save returns a command that writes cfg, or nil when saving is disabled.
@@ -33,24 +25,12 @@ func (s *saver) save(cfg config.Config) tea.Cmd {
 	if s.fn == nil {
 		return nil
 	}
-	s.seq++
-	seq := s.seq
-	return func() tea.Msg {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		if seq < s.done {
-			return nil
-		}
-		s.done = seq
-		if err := s.fn(cfg); err != nil {
-			return saveErrMsg{err}
-		}
-		return nil
-	}
+	fn := s.fn
+	return s.w.run(func() error { return fn(cfg) }, "Não foi possível salvar as preferências")
 }
 
-// prefKey handles the keys that work on every screen: help, theme and
-// sound. It reports whether the key was one of them.
+// prefKey handles the keys that work on every screen: help, theme, sound
+// and board turning. It reports whether the key was one of them.
 func (m *Model) prefKey(key string) (tea.Cmd, bool) {
 	switch key {
 	case "?":
@@ -60,6 +40,8 @@ func (m *Model) prefKey(key string) (tea.Cmd, bool) {
 		return m.cycleTheme(), true
 	case "m":
 		return m.toggleSound(), true
+	case "f":
+		return m.toggleFlip(), true
 	}
 	return nil, false
 }
@@ -73,6 +55,8 @@ func (m *Model) helpKey(key string) tea.Cmd {
 		return m.cycleTheme()
 	case "m":
 		return m.toggleSound()
+	case "f":
+		return m.toggleFlip()
 	}
 	return nil
 }
@@ -96,6 +80,35 @@ func (m *Model) toggleSound() tea.Cmd {
 		m.say("Som desligado")
 	}
 	return m.saver.save(m.cfg)
+}
+
+// toggleFlip turns board turning on or off and saves the choice. During a
+// game the board turns at once to match.
+func (m *Model) toggleFlip() tea.Cmd {
+	m.flip = !m.flip
+	m.cfg.Flip = m.flip
+	m.say("Girar tabuleiro: " + yesNo(m.flip))
+	if m.game != nil && m.anim == nil {
+		m.orientation = m.facing()
+	}
+	return m.saver.save(m.cfg)
+}
+
+// facing is the side the board shows at the bottom: the side to move when
+// the board turns, White otherwise.
+func (m *Model) facing() chess.Color {
+	if m.flip {
+		return m.game.Turn()
+	}
+	return chess.White
+}
+
+// yesNo is "sim" or "não".
+func yesNo(b bool) string {
+	if b {
+		return "sim"
+	}
+	return "não"
 }
 
 // rememberTimeControl saves the time control chosen in the menu.

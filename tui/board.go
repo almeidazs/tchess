@@ -9,9 +9,9 @@ import (
 
 // boardState gathers the per-frame data the square renderers need.
 func (m *Model) boardState(l layout) boardState {
-	bs := boardState{pos: m.game.Position(), checkSq: chess.NoSquare, pickCol: -1, drag: m.dragView(l)}
-	bs.last, bs.hasLast = m.game.LastMove()
-	if m.game.InCheck() {
+	bs := boardState{pos: m.shownPosition(), checkSq: chess.NoSquare, pickCol: -1, drag: m.dragView(l)}
+	bs.last, bs.hasLast = m.shownLastMove()
+	if bs.pos.InCheck() {
 		bs.checkSq = bs.pos.KingSquare(bs.pos.SideToMove())
 	}
 	for _, mv := range m.targets {
@@ -62,7 +62,7 @@ func (m *Model) squareLook(bs *boardState, col, row int) squareLook {
 		lk.capture = !lk.dot
 	}
 	lk.ghost = bs.drag.active && sq == bs.drag.from
-	lk.cursor = m.showCursor && m.mode == modePlay && col == m.cursorCol && row == m.cursorRow
+	lk.cursor = m.showCursor && m.mode == modePlay && !m.reviewing && col == m.cursorCol && row == m.cursorRow
 	return lk
 }
 

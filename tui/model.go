@@ -30,6 +30,15 @@ type Options struct {
 	// Save persists the preferences whenever the player changes them
 	// (default: nothing is saved). It runs outside the update loop.
 	Save func(config.Config) error
+
+	// GamesDir is where exported games are written and where the PGN
+	// picker looks for files (default: exporting is disabled).
+	GamesDir string
+	// ResumePath is the file that keeps the unfinished game, so it can be
+	// continued after the program closes (default: games are not kept).
+	ResumePath string
+	// Import, when set, opens this game instead of the menu.
+	Import *chess.PGNGame
 }
 
 // Model is the Bubble Tea model.
@@ -42,8 +51,14 @@ type Model struct {
 	game        *chess.Game
 	tc          clock.TimeControl
 	clock       *clock.Clock // nil when playing without a clock
-	orientation chess.Color  // side shown at the bottom; follows the side to move
+	orientation chess.Color  // side shown at the bottom
 	mode        mode
+	flip        bool // the board turns to face the side to move
+
+	reviewing bool // showing an earlier position instead of the live one
+	reviewPly int  // while reviewing: plies played in the position shown
+
+	moveClocks []moveClock // clock around each move (clock games), aligned with the history
 
 	cursorCol, cursorRow int  // keyboard cursor in screen cells (0,0 = top-left)
 	showCursor           bool // only shown once the keyboard is used
@@ -66,6 +81,14 @@ type Model struct {
 	notice  string
 	tickGen int
 
+	themes themePicker
+	open   openState
+	resume *savedGame // unfinished game offered by the menu
+
+	savedPath    string // file the finished game was saved to, "" until then
+	resultHidden bool   // the result card is put aside to see the board
+	files        *fileStore
+
 	help     bool   // help overlay open
 	themeIdx int    // active theme, index into themes
 	st       styles // styles derived from the theme
@@ -73,6 +96,8 @@ type Model struct {
 	saver    *saver
 	player   sound.Player
 	soundOn  bool
+
+	importPGN *chess.PGNGame // game to open at startup
 
 	animate bool       // post-move animations on the sprite board
 	anim    *animation // running animation, nil when idle
@@ -99,6 +124,9 @@ func New(opts Options) *Model {
 		saver:     &saver{fn: opts.Save},
 		player:    player,
 		soundOn:   opts.Config.Sound && !opts.Mute,
+		flip:      opts.Config.Flip,
+		files:     &fileStore{gamesDir: opts.GamesDir, resumePath: opts.ResumePath},
+		importPGN: opts.Import,
 	}
 	theme := opts.Config.Theme
 	if opts.Theme != "" {
@@ -106,13 +134,18 @@ func New(opts Options) *Model {
 	}
 	idx, _ := themeIndex(theme) // unknown names fall back to the default
 	m.setTheme(idx)
-	m.menu.restore(opts.Config.TimeControl)
+	m.resume = m.files.loadResume()
+	m.menu.restore(m.menuEntries(), opts.Config.TimeControl)
 	return m
 }
 
-// Init starts the game right away when a time control was given.
+// Init opens the imported game, or starts a game right away when a time
+// control was given.
 func (m *Model) Init() tea.Cmd {
-	if m.startWith != nil {
+	switch {
+	case m.importPGN != nil:
+		return m.loadRecord(m.importPGN, false)
+	case m.startWith != nil:
 		return m.startGame(*m.startWith)
 	}
 	return nil
@@ -128,7 +161,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case animMsg:
 		return m, m.onAnimFrame(msg)
 	case saveErrMsg:
-		m.say("Não foi possível salvar as preferências")
+		m.say(msg.what)
+	case exportedMsg:
+		m.onExported(msg)
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
@@ -137,8 +172,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.help {
 			return m, m.helpKey(msg.String())
 		}
-		if m.screen == screenMenu {
+		switch m.screen {
+		case screenMenu:
 			return m, m.menuKey(msg)
+		case screenThemes:
+			return m, m.themesKey(msg.String())
+		case screenOpen:
+			return m, m.openKey(msg.String())
 		}
 		return m, m.gameKey(msg.String())
 	case tea.MouseMsg:

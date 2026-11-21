@@ -5,11 +5,26 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/almeidazs/tchess/internal/config"
 )
 
+func TestMenuRowKeepsAGap(t *testing.T) {
+	if got := menuRow("Continuar", "sem relógio · lance 3"); !strings.Contains(got, "Continuar  sem") {
+		t.Fatalf("label and detail run together: %q", got)
+	}
+	if got := menuRow("Continuar", "sem relógio · lance 123"); lipgloss.Width(got) != menuInnerW-4 || !strings.HasSuffix(got, "…") {
+		t.Fatalf("a long detail should be cut to fit: %q", got)
+	}
+	if got := menuRow("Tema", "Madeira ›"); lipgloss.Width(got) != menuInnerW-4 || !strings.HasSuffix(got, "Madeira ›") {
+		t.Fatalf("short rows are right-aligned: %q", got)
+	}
+}
+
 func TestMenuClickStartsGame(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 100, Height: 40})
 	lines := strings.Split(ansi.Strip(m.View()), "\n")
 	for y, line := range lines {
@@ -24,7 +39,7 @@ func TestMenuClickStartsGame(t *testing.T) {
 }
 
 func TestMenuCustomTimeControl(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 100, Height: 40})
 	for range len(menuItems) - 1 {
 		key(m, "down")

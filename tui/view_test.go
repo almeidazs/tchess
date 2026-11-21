@@ -10,6 +10,7 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 )
 
 func TestViewRenders(t *testing.T) {
@@ -46,7 +47,7 @@ func TestGameOverOverlay(t *testing.T) {
 }
 
 func BenchmarkViewLargeBoard(b *testing.B) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
 	m.startGame(clock.TimeControl{Base: 5 * time.Minute})
 	b.ReportAllocs()

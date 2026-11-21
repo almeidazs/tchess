@@ -18,8 +18,10 @@ import (
 type screen uint8
 
 const (
-	screenMenu screen = iota
-	screenGame
+	screenMenu   screen = iota
+	screenGame          // the game itself
+	screenThemes        // theme picker with a board preview
+	screenOpen          // PGN file picker
 )
 
 // mode is the interaction state while on the game screen.
@@ -31,6 +33,7 @@ const (
 	modePromotion                 // choosing the promotion piece
 	modeConfirmResign             // "resign? y/n"
 	modeDrawOffer                 // the opponent answers a draw offer
+	modeUndoOffer                 // the opponent answers a take-back request
 	modeConfirmQuit               // "quit? y/n"
 	modeGameOver                  // result shown, waiting for new game / quit
 )
@@ -136,12 +139,68 @@ type menuItem struct {
 	tc    string // clock.Parse input; "" means "custom"
 }
 
+// entryKind is what a menu entry does.
+type entryKind uint8
+
+const (
+	entryResume entryKind = iota // continue the saved game
+	entryTime                    // start a game with a preset time control
+	entryCustom                  // type a time control
+	entryTheme                   // open the theme picker
+	entryFlip                    // toggle board turning
+	entryOpen                    // open a PGN file
+)
+
+// menuEntry is one selectable line of the menu.
+type menuEntry struct {
+	kind  entryKind
+	label string
+	right string // right-aligned detail: time control, theme name, sim/não
+	tc    string // entryTime: clock.Parse input
+}
+
 // menuState is the menu's cursor and custom time-control input.
 type menuState struct {
-	cursor  int
+	cursor  int  // index into Model.menuEntries()
 	editing bool // typing a custom time control
 	input   string
 	err     string
 	notice  string // feedback for the theme and sound keys
 	custom  string // last custom time control, offered again when editing
+}
+
+// themePicker is the theme screen's state.
+type themePicker struct {
+	cursor int // highlighted theme, previewed live
+	before int // theme to restore on Esc
+}
+
+// pgnFile is a game file offered by the PGN picker.
+type pgnFile struct {
+	name, path string
+	modTime    time.Time
+}
+
+// openState is the PGN picker's state: the files of the games folder,
+// then a last entry to type a path.
+type openState struct {
+	files   []pgnFile
+	cursor  int
+	editing bool // typing a path
+	input   string
+	err     string
+}
+
+// moveClock is what the mover's clock showed around one move: written to the
+// PGN as %clk, and restored when the move is taken back.
+type moveClock struct {
+	before  time.Duration // at the moment of the move
+	after   time.Duration // after it, increment included
+	running bool          // the mover's time was running (not on the first move)
+}
+
+// savedGame is an unfinished game found on disk at startup.
+type savedGame struct {
+	record *chess.PGNGame
+	label  string // e.g. "5+3 · lance 23"
 }

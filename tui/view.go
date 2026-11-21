@@ -12,10 +12,18 @@ func (m *Model) View() string {
 	if m.width == 0 {
 		return ""
 	}
-	if m.screen == screenMenu {
-		v := m.menuView()
-		ox, oy := centerOffset(m.width, m.height, lipgloss.Width(v), lipgloss.Height(v))
-		return place(v, ox, oy)
+	var page string
+	switch m.screen {
+	case screenMenu:
+		page = m.menuView()
+	case screenThemes:
+		page = m.themesView()
+	case screenOpen:
+		page = m.openView()
+	}
+	if page != "" {
+		ox, oy := centerOffset(m.width, m.height, lipgloss.Width(page), lipgloss.Height(page))
+		return place(page, ox, oy)
 	}
 	l := computeLayout(m.width, m.height)
 	if !l.fits(m.width, m.height) {
@@ -46,7 +54,7 @@ func (m *Model) gameView(l layout) string {
 	}
 	lines = append(lines, "", truncate(m.statusView(), l.totalW), truncate(m.helpView(), l.totalW))
 
-	if m.mode == modeGameOver && m.anim == nil {
+	if m.mode == modeGameOver && m.anim == nil && !m.reviewing && !m.resultHidden {
 		box := m.resultBox()
 		bw, bh := lipgloss.Width(box), lipgloss.Height(box)
 		x := max(rankLabelW+(8*l.cellW-bw)/2, 0)

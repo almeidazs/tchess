@@ -25,24 +25,54 @@ const (
 	menuPadY   = 1
 )
 
-// menuLines returns the menu content and the index of the first item line.
-func (m *Model) menuLines() (lines []string, firstItem int) {
+// menuEntries lists the selectable lines: the saved game, if any, the
+// time controls and the options.
+func (m *Model) menuEntries() []menuEntry {
+	var out []menuEntry
+	if m.resume != nil {
+		out = append(out, menuEntry{kind: entryResume, label: "Continuar", right: m.resume.label})
+	}
+	for _, it := range menuItems {
+		e := menuEntry{kind: entryTime, label: it.label, tc: it.tc}
+		switch it.tc {
+		case "":
+			e.kind = entryCustom
+		case "none":
+		default:
+			e.right = it.tc
+		}
+		out = append(out, e)
+	}
+	return append(out,
+		menuEntry{kind: entryTheme, label: "Tema", right: m.theme().Name + " ›"},
+		menuEntry{kind: entryFlip, label: "Girar tabuleiro", right: yesNo(m.flip)},
+		menuEntry{kind: entryOpen, label: "Abrir PGN", right: "›"},
+	)
+}
+
+// menuLines returns the menu content and, for each entry, its line.
+func (m *Model) menuLines() (lines []string, entryLine []int) {
 	ms := &m.menu
+	entries := m.menuEntries()
 	lines = append(lines,
 		center(m.st.title.Render("♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜"), menuInnerW),
 		center(m.st.title.Render("X  A  D  R  E  Z"), menuInnerW),
 		"",
-		dimStyle.Render("Controle de tempo"),
-		"",
 	)
-	firstItem = len(lines)
-	for i, it := range menuItems {
-		label := it.label
-		right := ""
-		if it.tc != "" && it.tc != "none" {
-			right = it.tc
+	for i, e := range entries {
+		switch {
+		case e.kind == entryResume:
+			lines = append(lines, dimStyle.Render("Partida salva"))
+		case e.kind == entryTime && (i == 0 || entries[i-1].kind == entryResume):
+			if i > 0 {
+				lines = append(lines, "")
+			}
+			lines = append(lines, dimStyle.Render("Controle de tempo"))
+		case e.kind == entryTheme:
+			lines = append(lines, "", dimStyle.Render("Opções"))
 		}
-		row := pad(label, menuInnerW-4-len(right)) + right
+		entryLine = append(entryLine, len(lines))
+		row := menuRow(e.label, e.right)
 		if i == ms.cursor {
 			lines = append(lines, m.st.accent.Render("▸ "+row+"  "))
 		} else {
@@ -61,7 +91,16 @@ func (m *Model) menuLines() (lines []string, firstItem int) {
 		lines = append(lines, "")
 	}
 	lines = append(lines, "", m.menuHelp())
-	return lines, firstItem
+	return lines, entryLine
+}
+
+// menuRow lays out a label and its right-aligned detail in the width of a
+// menu line (minus the cursor and margin), keeping at least two spaces
+// between them; a detail too long for that is cut with an ellipsis.
+func menuRow(label, right string) string {
+	const width, minGap = menuInnerW - 4, 2
+	right = truncate(right, max(width-lipgloss.Width(label)-minGap, 0))
+	return pad(label, width-lipgloss.Width(right)) + right
 }
 
 // menuHelp is the key hint line under the menu.
@@ -69,10 +108,10 @@ func (m *Model) menuHelp() string {
 	if m.menu.editing {
 		return m.helpLine([][2]string{{"enter", "jogar"}, {"esc", "voltar"}})
 	}
-	return m.helpLine([][2]string{{"enter", "jogar"}, {"?", "ajuda"}, {"q", "sair"}})
+	return m.helpLine([][2]string{{"enter", "abrir"}, {"?", "ajuda"}, {"q", "sair"}})
 }
 
-// menuView renders the time-control menu, or the help card over it.
+// menuView renders the menu, or the help card over it.
 func (m *Model) menuView() string {
 	if m.help {
 		return m.helpBox(m.height)
@@ -116,67 +155,91 @@ func (m *Model) menuKey(msg tea.KeyMsg) tea.Cmd {
 	if cmd, ok := m.prefKey(key); ok {
 		return cmd
 	}
+	n := len(m.menuEntries())
 	switch key {
 	case "up", "k":
-		ms.cursor = (ms.cursor + len(menuItems) - 1) % len(menuItems)
+		ms.cursor = (ms.cursor + n - 1) % n
 	case "down", "j", "tab":
-		ms.cursor = (ms.cursor + 1) % len(menuItems)
+		ms.cursor = (ms.cursor + 1) % n
 	case "enter", " ", "space":
-		return m.chooseMenuItem()
+		return m.chooseEntry()
 	case "q", "esc":
 		return tea.Quit
 	}
 	return nil
 }
 
-// chooseMenuItem starts a game with the selected preset, or opens the
-// custom time-control input.
-func (m *Model) chooseMenuItem() tea.Cmd {
-	it := menuItems[m.menu.cursor]
+// chooseEntry acts on the entry under the cursor.
+func (m *Model) chooseEntry() tea.Cmd {
+	entries := m.menuEntries()
+	m.menu.cursor = min(m.menu.cursor, len(entries)-1)
+	e := entries[m.menu.cursor]
 	m.menu.err = ""
-	if it.tc == "" {
+	switch e.kind {
+	case entryResume:
+		return m.loadRecord(m.resume.record, true)
+	case entryCustom:
 		m.menu.editing, m.menu.input = true, m.menu.custom
-		return nil
+	case entryTime:
+		tc, _ := clock.Parse(e.tc)
+		return tea.Batch(m.rememberTimeControl(tc), m.startGame(tc))
+	case entryTheme:
+		m.openThemes()
+	case entryFlip:
+		return m.toggleFlip()
+	case entryOpen:
+		m.openPicker()
 	}
-	tc, _ := clock.Parse(it.tc)
-	return tea.Batch(m.rememberTimeControl(tc), m.startGame(tc))
+	return nil
 }
 
-// restore puts the cursor on the saved time control. One that is not a
-// preset is offered again when the player opens the custom input.
-func (ms *menuState) restore(saved string) {
-	if saved == "" {
-		return
-	}
+// restore puts the cursor on the saved game when there is one, otherwise
+// on the saved time control. A time control that is not a preset is
+// offered again when the player opens the custom input.
+func (ms *menuState) restore(entries []menuEntry, saved string) {
+	ms.cursor = 0 // the saved game, or the first preset
 	want, err := clock.Parse(saved)
-	if err != nil {
+	if saved == "" || err != nil {
 		return
 	}
-	for i, it := range menuItems {
-		if it.tc == "" {
-			ms.cursor, ms.custom = i, saved
-			return
+	match := -1
+	for i, e := range entries {
+		if tc, _ := clock.Parse(e.tc); e.kind == entryTime && tc == want {
+			match = i
+			break
 		}
-		if tc, _ := clock.Parse(it.tc); tc == want {
-			ms.cursor = i
-			return
+	}
+	if match < 0 {
+		ms.custom = saved
+		for i, e := range entries {
+			if e.kind == entryCustom {
+				match = i
+			}
 		}
+	}
+	if entries[0].kind != entryResume {
+		ms.cursor = match
 	}
 }
 
-// menuClick selects and starts the preset under the pointer.
+// menuClick acts on the entry under the pointer.
 func (m *Model) menuClick(x, y int) tea.Cmd {
-	if m.menu.editing || m.help {
+	if m.menu.editing {
 		return nil
 	}
 	view := m.menuView()
 	ox, oy := centerOffset(m.width, m.height, lipgloss.Width(view), lipgloss.Height(view))
-	_, first := m.menuLines()
-	row := y - (oy + 1 + menuPadY + first)
+	lines, entryLine := m.menuLines()
+	row := y - (oy + 1 + menuPadY)
 	col := x - (ox + 1 + menuPadX)
-	if row < 0 || row >= len(menuItems) || col < 0 || col >= menuInnerW {
+	if row < 0 || row >= len(lines) || col < 0 || col >= menuInnerW {
 		return nil
 	}
-	m.menu.cursor = row
-	return m.chooseMenuItem()
+	for i, l := range entryLine {
+		if l == row {
+			m.menu.cursor = i
+			return m.chooseEntry()
+		}
+	}
+	return nil
 }

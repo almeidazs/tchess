@@ -33,7 +33,12 @@ func (m *Model) statusView() string {
 	other := colorName(m.game.Turn().Other())
 	yn := m.st.key.Render("[y]") + textStyle.Render(" sim   ") + m.st.key.Render("[n]") + textStyle.Render(" não")
 
+	if m.reviewing && (m.mode == modePlay || m.mode == modeGameOver) {
+		return m.reviewStatus()
+	}
 	switch m.mode {
+	case modeUndoOffer:
+		return m.st.accent.Render("As "+other+" pedem para voltar o lance. "+turn+", aceitam?  ") + yn
 	case modeInput:
 		return m.st.key.Render(": ") + textStyle.Render(m.input) + m.st.accent.Render("▌") + "  " + m.inputHint()
 	case modePromotion:
@@ -46,8 +51,12 @@ func (m *Model) statusView() string {
 	case modeConfirmQuit:
 		return m.st.accent.Render("Sair da partida?  ") + yn
 	case modeGameOver:
-		return m.st.accent.Render(outcomeHeadline(m.game.Outcome())) +
+		s := m.st.accent.Render(outcomeHeadline(m.game.Outcome())) +
 			dimStyle.Render(" · "+outcomeScore(m.game.Outcome())+" · "+terminationText(m.game.Termination()))
+		if m.notice != "" {
+			s += dimStyle.Render("  · " + m.notice)
+		}
+		return s
 	}
 
 	s := textStyle.Render("Vez das ") + m.st.accent.Render(turn)
@@ -64,16 +73,47 @@ func (m *Model) statusView() string {
 	return s
 }
 
+// reviewStatus says which move the board shows.
+func (m *Model) reviewStatus() string {
+	s := m.st.accent.Render("Revendo") + textStyle.Render(": ")
+	if m.reviewPly == 0 {
+		s += textStyle.Render("posição inicial")
+	} else {
+		start := m.game.StartPosition()
+		idx := m.reviewPly - 1 // half-moves since the start's white move
+		if start.SideToMove() == chess.Black {
+			idx++
+		}
+		num := fmt.Sprintf("%d.", start.FullmoveNumber()+idx/2)
+		if idx%2 == 1 {
+			num += ".."
+		}
+		s += textStyle.Render(num + m.game.History()[m.reviewPly-1].SAN)
+	}
+	s += dimStyle.Render(fmt.Sprintf("  (%d de %d)", m.reviewPly, m.game.Ply()))
+	if m.notice != "" {
+		s += dimStyle.Render("  · " + m.notice)
+	}
+	return s
+}
+
 // helpView lists the keys available in the current mode.
 func (m *Model) helpView() string {
+	if m.reviewing && (m.mode == modePlay || m.mode == modeGameOver) {
+		step := "[ ]"
+		if m.mode == modeGameOver {
+			step = "←→ [ ]"
+		}
+		return m.helpLine([][2]string{{step, "lance anterior/seguinte"}, {"home end", "início/fim"}, {"esc", "voltar ao fim"}})
+	}
 	switch m.mode {
 	case modeGameOver:
-		return m.helpLine([][2]string{{"n", "nova partida"}, {"?", "ajuda"}, {"q", "sair"}})
+		return m.helpLine([][2]string{{"←→", "rever lances"}, {"esc", "resultado"}, {"n", "nova partida"}, {"e", "exportar"}, {"?", "ajuda"}, {"q", "sair"}})
 	case modeInput:
 		return m.helpLine([][2]string{{"enter", "jogar"}, {"esc", "cancelar"}})
 	case modePlay:
-		return m.helpLine([][2]string{{"←↑↓→ enter", "mover"}, {":", "digitar lance"},
-			{"d", "empate"}, {"r", "desistir"}, {"?", "ajuda"}, {"q", "sair"}})
+		return m.helpLine([][2]string{{"←↑↓→ enter", "mover"}, {":", "digitar"}, {"u", "voltar"},
+			{"[ ]", "rever"}, {"d", "empate"}, {"r", "desistir"}, {"?", "ajuda"}, {"q", "sair"}})
 	}
 	return ""
 }

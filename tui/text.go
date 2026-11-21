@@ -40,8 +40,22 @@ func terminationText(t chess.Termination) string {
 		return "tempo esgotado"
 	case chess.TimeoutVsInsufficientMaterial:
 		return "tempo esgotado, sem material para mate"
+	case chess.RecordedResult:
+		return "resultado do PGN"
 	}
 	return ""
+}
+
+// terminationFromText reads back a reason written by terminationText, as
+// in the Termination tag of the games tchess saves. Anything else is
+// RecordedResult.
+func terminationFromText(s string) chess.Termination {
+	for t := chess.Checkmate; t <= chess.RecordedResult; t++ {
+		if s != "" && terminationText(t) == s {
+			return t
+		}
+	}
+	return chess.RecordedResult
 }
 
 // outcomeHeadline announces the winner or the draw.

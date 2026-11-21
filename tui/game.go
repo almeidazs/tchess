@@ -29,12 +29,17 @@ func (m *Model) startGame(tc clock.TimeControl) tea.Cmd {
 	m.turnStart = m.now()
 	m.input, m.inputErr = "", ""
 	m.lowWarned = [2]bool{}
+	m.moveClocks = nil
+	m.savedPath = ""
+	m.reviewing, m.help = false, false
 	m.clearSelection()
 	m.tickGen++
+	m.resume = nil // a new game replaces the saved one
+	cmds := []tea.Cmd{m.files.clearResume()}
 	if m.clock != nil {
-		return tick(m.tickGen)
+		cmds = append(cmds, tick(m.tickGen))
 	}
-	return nil
+	return tea.Batch(cmds...)
 }
 
 // toMenu leaves the game for the time-control menu.
@@ -43,10 +48,12 @@ func (m *Model) toMenu() {
 	m.anim = nil
 	m.game = nil
 	m.clock = nil
+	m.reviewing = false
 	m.tickGen++
+	m.menu.restore(m.menuEntries(), m.cfg.TimeControl)
 }
 
-// play presses the clock, makes the move and starts the animation. If the
+// play moveClocks the clock, makes the move and starts the animation. If the
 // mover's flag fell before the move was completed, the move does not count.
 func (m *Model) play(mv chess.Move) tea.Cmd {
 	mover, prevOrient := m.game.Turn(), m.orientation
@@ -65,11 +72,12 @@ func (m *Model) play(mv chess.Move) tea.Cmd {
 			delay += slideDur
 		}
 	}
+	var pr moveClock
 	if m.clock != nil {
+		pr.before, pr.running = m.clock.Remaining(mover), m.clock.Running()
 		m.clock.SetStartDelay(delay)
 		if m.clock.Press(mover) {
-			m.conclude(m.game.FlagFall(mover))
-			return nil
+			return m.conclude(m.game.FlagFall(mover))
 		}
 	}
 	if err := m.game.Play(mv); err != nil {
@@ -79,16 +87,22 @@ func (m *Model) play(mv chess.Move) tea.Cmd {
 	now := m.now()
 	m.moveTimes = append(m.moveTimes, max(now.Sub(m.turnStart), 0))
 	m.turnStart = now.Add(delay)
+	if m.clock != nil {
+		pr.after = m.clock.Remaining(mover)
+		m.moveClocks = append(m.moveClocks, pr)
+	}
+	var save tea.Cmd
 	if m.game.IsOver() {
-		m.finish()
+		save = m.finish()
 	} else {
-		m.orientation = m.game.Turn()
+		m.orientation = m.facing()
 		m.sfx(moveEffect(mv, m.game.InCheck()))
+		save = m.files.saveResume(m.gamePGN())
 	}
 	if animated {
-		return m.startAnimation(before, mv, prevOrient, m.orientation, dropped)
+		return tea.Batch(save, m.startAnimation(before, mv, prevOrient, m.orientation, dropped))
 	}
-	return nil
+	return save
 }
 
 // orderPromotions sorts promotion candidates as the picker shows them: Q R B N.
@@ -110,8 +124,7 @@ func (m *Model) onTick(msg tickMsg) tea.Cmd {
 		return nil
 	}
 	if c, flagged := m.clock.Flagged(); flagged {
-		m.conclude(m.game.FlagFall(c))
-		return nil
+		return m.conclude(m.game.FlagFall(c))
 	}
 	m.checkLowTime()
 	return tick(m.tickGen)
@@ -119,20 +132,26 @@ func (m *Model) onTick(msg tickMsg) tea.Cmd {
 
 // conclude finishes the game after an engine call that ends it. The engine
 // only refuses when the game is already over, which the modes rule out.
-func (m *Model) conclude(err error) {
+func (m *Model) conclude(err error) tea.Cmd {
 	if err != nil {
 		m.notice = err.Error()
-		return
+		return nil
 	}
-	m.finish()
+	return m.finish()
 }
 
-// finish stops the clock and shows the result.
-func (m *Model) finish() {
+// finish stops the clock and shows the result. The game moves from the
+// resume file, since a finished game has nothing to resume, to the games
+// folder, so every finished game can be opened again.
+func (m *Model) finish() tea.Cmd {
 	if m.clock != nil {
 		m.clock.Stop()
 	}
 	m.mode = modeGameOver
+	m.reviewing = false
+	m.resultHidden = false
+	m.notice = ""
 	m.clearSelection()
 	m.sfx(sound.GameEnd)
+	return tea.Batch(m.files.clearResume(), m.saveFinished())
 }

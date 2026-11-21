@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
@@ -66,8 +67,9 @@ func runCmd(m *Model, cmd tea.Cmd) {
 			for _, c := range msg {
 				runCmd(m, c)
 			}
-		case saveErrMsg:
-			m.Update(msg)
+		case nil:
+		default:
+			m.Update(msg) // feed results back, as Bubble Tea would
 		}
 	case <-time.After(50 * time.Millisecond): // a timer: skip it
 	}
@@ -280,7 +282,7 @@ func TestHelpOverlay(t *testing.T) {
 	m = New(Options{})
 	m.Update(tea.WindowSizeMsg{Width: 80, Height: 30})
 	key(m, "?")
-	if !strings.Contains(m.View(), "escolher o ritmo") {
+	if !strings.Contains(m.View(), "jogar ou abrir") {
 		t.Fatal("menu help should list the menu keys")
 	}
 	key(m, "esc")
@@ -295,6 +297,9 @@ func TestHelpFitsSmallestBoard(t *testing.T) {
 	box := m.helpBox(14)
 	if h := strings.Count(box, "\n") + 1; h > 14 {
 		t.Fatalf("help is %d rows tall on a 14-row terminal", h)
+	}
+	if w := lipgloss.Width(box); w > 58 {
+		t.Fatalf("help is %d columns wide on a 58-column terminal", w)
 	}
 	if lines := strings.Split(m.View(), "\n"); len(lines) > 14 {
 		t.Fatalf("view grew to %d rows", len(lines))

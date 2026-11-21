@@ -7,11 +7,12 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 )
 
 func newGame(t *testing.T, w, h int, tc string) *Model {
 	t.Helper()
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: w, Height: h})
 	m.animate = false // interaction tests don't wait for animations
 	parsed, err := clock.Parse(tc)

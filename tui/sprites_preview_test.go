@@ -12,6 +12,7 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 	"github.com/almeidazs/tchess/internal/pixel"
 )
 
@@ -50,7 +51,7 @@ func TestSpritePreview(t *testing.T) {
 	}
 
 	// Animation frames on the largest board: e2-e4 slide, then the turn.
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
 	m.startGame(clock.TimeControl{})
 	start := time.Unix(0, 0)

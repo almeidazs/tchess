@@ -8,10 +8,11 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 )
 
 func TestMoveAnimation(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
 	m.startGame(clock.TimeControl{Base: 5 * time.Minute})
 	start := time.Now()
@@ -56,7 +57,7 @@ func TestMoveAnimation(t *testing.T) {
 }
 
 func TestDropSkipsSlideButStillTurns(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
 	m.startGame(clock.TimeControl{})
 	start := time.Now()
@@ -68,7 +69,7 @@ func TestDropSkipsSlideButStillTurns(t *testing.T) {
 }
 
 func TestNoAnimationOnGlyphBoard(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 70, Height: 20}) // only the glyph board fits
 	m.startGame(clock.TimeControl{})
 	click(m, chess.E2)

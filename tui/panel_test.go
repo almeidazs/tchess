@@ -10,6 +10,7 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 )
 
 func TestMoveTimesInHistory(t *testing.T) {
@@ -37,7 +38,7 @@ func TestMoveTimesInHistory(t *testing.T) {
 }
 
 func TestMoveTimeExcludesAnimation(t *testing.T) {
-	m := New(Options{})
+	m := New(Options{Config: config.Default()})
 	m.Update(tea.WindowSizeMsg{Width: 160, Height: 50})
 	start := time.Unix(1000, 0)
 	m.now = func() time.Time { return start }

@@ -20,8 +20,16 @@ func (m *Model) handleMouse(msg tea.MouseMsg) tea.Cmd {
 	switch {
 	case msg.Action == tea.MouseActionPress && msg.Button == tea.MouseButtonLeft:
 		m.anim = nil // any input skips the animation
-		if m.screen == screenMenu {
+		if m.help {
+			return nil
+		}
+		switch m.screen {
+		case screenMenu:
 			return m.menuClick(msg.X, msg.Y)
+		case screenThemes:
+			return m.themesClick(msg.X, msg.Y)
+		case screenOpen:
+			return m.openClick(msg.X, msg.Y)
 		}
 		return m.mouseDown(msg.X, msg.Y)
 	case msg.Action == tea.MouseActionMotion && m.drag != nil:
@@ -42,6 +50,16 @@ func (m *Model) mouseDown(x, y int) tea.Cmd {
 	col, row, onBoard := l.cellAt(x, y)
 	if m.mode == modeInput { // a click leaves the prompt and acts normally
 		m.closeInput()
+	}
+	if m.mode == modePlay || m.mode == modeGameOver {
+		if ply, ok := m.historyAt(x, y); ok { // a move in the list: review it
+			m.reviewAt(ply)
+			return nil
+		}
+		if m.reviewing { // the board: back to the live position
+			m.stopReview()
+			return nil
+		}
 	}
 	switch m.mode {
 	case modePromotion:

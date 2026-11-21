@@ -113,13 +113,8 @@ func (m *Model) historyView(height int) string {
 			bar.Render(timeBar(spent, longest))+" "+dimStyle.Render(fmt.Sprintf("%6s", formatMoveTime(spent))))
 	}
 	visible := inner - 1 // first line is the title
-	if len(rows) > visible {
-		start := len(rows) - visible
-		if start%2 == 1 { // keep each move's white and black lines together
-			start++
-		}
-		rows = rows[start:]
-	}
+	start := m.historyStart(len(rows), visible)
+	rows = rows[start:min(len(rows), start+visible)]
 	if len(rows) == 0 {
 		rows = []string{dimStyle.Render("  nenhum lance ainda")}
 	}
@@ -130,9 +125,60 @@ func (m *Model) historyView(height int) string {
 	return boxStyle.Width(panelW - 2).Render(strings.Join(body, "\n"))
 }
 
-// sanCell renders a move's SAN, highlighting the last move.
+// historyStart is the first history row shown when visible rows fit: the
+// latest moves, or, while reviewing an earlier move, a window holding it.
+// Windows start on White's move so each move's two lines stay together.
+func (m *Model) historyStart(n, visible int) int {
+	if visible <= 0 || n <= visible {
+		return 0
+	}
+	start := n - visible
+	if start%2 == 1 {
+		start++
+	}
+	if focus := m.reviewPly - 1; m.reviewing && focus < start {
+		start = max(focus-focus%2, 0)
+	}
+	return start
+}
+
+// historyRows is the height of the move list inside the history box, and
+// the box's top row relative to the board.
+func (m *Model) historyRows(l layout) (top, visible int) {
+	orient := m.viewOrientation()
+	topH := lipgloss.Height(m.clockView(orient.Other(), l.compact()))
+	bottomH := lipgloss.Height(m.clockView(orient, l.compact()))
+	height := l.boardH() - topH - bottomH
+	return topH, max(height-2, 1) - 1 // borders, then the title line
+}
+
+// historyAt maps a click to the move list: the ply after the clicked move.
+func (m *Model) historyAt(x, y int) (int, bool) {
+	l := computeLayout(m.width, m.height)
+	panelX := l.boardX + 8*l.cellW + gapW
+	if x < panelX || x >= panelX+panelW {
+		return 0, false
+	}
+	top, visible := m.historyRows(l)
+	row := y - (l.boardY + top + 2) // border and title
+	n := m.game.Ply()
+	if row < 0 || row >= visible {
+		return 0, false
+	}
+	i := m.historyStart(n, visible) + row
+	if i >= n {
+		return 0, false
+	}
+	return i + 1, true
+}
+
+// sanCell renders a move's SAN, highlighting the move shown on the board.
 func (m *Model) sanCell(h []chess.MoveRecord, i int) string {
-	if i == len(h)-1 {
+	shown := len(h) - 1
+	if m.reviewing {
+		shown = m.reviewPly - 1
+	}
+	if i == shown {
 		return m.st.accent.Render(h[i].SAN)
 	}
 	return textStyle.Render(h[i].SAN)
