@@ -102,7 +102,7 @@ func demo(path string) {
 	r := &recorder{s: s, fs: newFontSet(8)}
 
 	r.snap(1200 * time.Millisecond) // menu
-	for range 7 {                   // down to "Tema"
+	for range 7 {                   // down to "Theme"
 		s.key(tea.KeyDown)
 		r.snap(90 * time.Millisecond)
 	}
@@ -113,7 +113,7 @@ func demo(path string) {
 		s.key(k)
 		r.snap(650 * time.Millisecond)
 	}
-	s.key(tea.KeyEnter) // keep Floresta
+	s.key(tea.KeyEnter) // keep Forest
 	r.snap(700 * time.Millisecond)
 	for range 5 { // back up to Blitz 5+3
 		s.key(tea.KeyUp)

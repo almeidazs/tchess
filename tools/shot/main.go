@@ -16,7 +16,7 @@ import (
 	"github.com/muesli/termenv"
 )
 
-const title = "tchess — ♞ Xadrez"
+const title = "tchess"
 
 func main() {
 	out := flag.String("out", "assets", "output directory")
