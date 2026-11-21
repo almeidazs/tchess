@@ -42,9 +42,9 @@ nfpms:
     maintainer: Almeida <me@almeidazs.com>
     homepage: https://github.com/almeidazs/tchess
     description: |-
-      Xadrez para dois jogadores no terminal.
-      Peças em pixel art, mouse e teclado, relógio, temas, sons e todas as
-      regras da FIDE.
+      Two-player chess in the terminal.
+      Pixel-art pieces, mouse and keyboard, clocks, themes, sounds and every
+      FIDE rule.
     license: Apache-2.0
     section: games
     formats: [deb, rpm, apk, archlinux]
@@ -66,7 +66,7 @@ dockers_v2:
     dockerfile: Dockerfile
     labels:
       org.opencontainers.image.title: tchess
-      org.opencontainers.image.description: Xadrez para dois jogadores no terminal
+      org.opencontainers.image.description: Two-player chess in the terminal
       org.opencontainers.image.source: https://github.com/almeidazs/tchess
       org.opencontainers.image.version: "{{ .Version }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
@@ -76,13 +76,13 @@ changelog:
   sort: asc
   use: github
   groups:
-    - title: Novidades
+    - title: Features
       regexp: '^.*?feat(\(.+\))??!?:.+$'
       order: 0
-    - title: Correções
+    - title: Fixes
       regexp: '^.*?fix(\(.+\))??!?:.+$'
       order: 1
-    - title: Outras mudanças
+    - title: Other changes
       order: 999
   filters:
     exclude:
@@ -93,8 +93,8 @@ changelog:
 
 release:
   footer: |
-    **Instalação**
+    **Install**
 
     - Go: `go install github.com/almeidazs/tchess/cmd/tchess@{{ .Tag }}`
     - Docker: `docker run --rm -it ghcr.io/almeidazs/tchess:{{ .Version }}`
-    - Debian/Ubuntu, Fedora, Alpine e Arch: pacotes `.deb`, `.rpm`, `.apk` e `.pkg.tar.zst` abaixo
+    - Debian/Ubuntu, Fedora, Alpine and Arch: the `.deb`, `.rpm`, `.apk` and `.pkg.tar.zst` packages below
