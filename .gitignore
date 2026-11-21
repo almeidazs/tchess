@@ -1,0 +1,12 @@
+# Build output
+/bin/
+/dist/
+
+# Test artifacts
+coverage.out
+*.test
+*.prof
+
+# Local tooling
+.code-review-graph/
+/tools/shot/shot

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
+
+# Generated images don't count toward the repository language stats.
+assets/** linguist-generated
