@@ -21,7 +21,7 @@ func TestLoadMissingGivesDefaults(t *testing.T) {
 
 func TestSaveLoadRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "sub", "config.toml") // dir created on save
-	want := Config{Theme: "Oceano", Sound: false, TimeControl: "5+3"}
+	want := Config{Theme: "Oceano", Sound: false, Flip: false, TimeControl: "5+3"}
 	if err := Save(path, want); err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestLoadPartialKeepsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Theme != "Coral" || !cfg.Sound {
+	if cfg.Theme != "Coral" || !cfg.Sound || !cfg.Flip {
 		t.Fatalf("got %+v", cfg)
 	}
 }

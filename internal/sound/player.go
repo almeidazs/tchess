@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/almeidazs/tchess/internal/atomicfile"
 )
 
 // version is part of every file name. Bump it when the synthesis changes,
@@ -108,23 +110,9 @@ func (s *System) findPlayer() []string {
 }
 
 // writeIfChanged writes data to path unless the file already holds it.
-// It writes to a temporary file and renames it, so a player never reads a
-// half-written file.
 func writeIfChanged(path string, data []byte) error {
 	if old, err := os.ReadFile(path); err == nil && bytes.Equal(old, data) {
 		return nil
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".sound-*.wav")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name()) // no-op after a successful rename
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+	return atomicfile.Write(path, data)
 }

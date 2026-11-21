@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+
+	"github.com/almeidazs/tchess/internal/atomicfile"
 )
 
 // DirName is the folder, under the home directory, that holds the
@@ -21,6 +23,8 @@ type Config struct {
 	Theme string `toml:"theme"`
 	// Sound turns move sounds on or off.
 	Sound bool `toml:"sound"`
+	// Flip turns the board after every move to face the side to move.
+	Flip bool `toml:"flip"`
 	// TimeControl is the last time control played ("5+3", "none"); the
 	// menu opens on it.
 	TimeControl string `toml:"time_control"`
@@ -28,7 +32,7 @@ type Config struct {
 
 // Default returns the preferences used when there is no file yet.
 func Default() Config {
-	return Config{Sound: true}
+	return Config{Sound: true, Flip: true}
 }
 
 // Dir returns ~/.tchess, which holds config.toml and the sound files.
@@ -65,23 +69,7 @@ func Save(path string, cfg Config) error {
 	if err := toml.NewEncoder(&buf).Encode(cfg); err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("config: %w", err)
-	}
-	tmp, err := os.CreateTemp(dir, ".config-*.toml")
-	if err != nil {
-		return fmt.Errorf("config: %w", err)
-	}
-	defer os.Remove(tmp.Name()) // no-op after a successful rename
-	if _, err := tmp.Write(buf.Bytes()); err != nil {
-		tmp.Close()
-		return fmt.Errorf("config: %w", err)
-	}
-	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("config: %w", err)
-	}
-	if err := os.Rename(tmp.Name(), path); err != nil {
+	if err := atomicfile.Write(path, buf.Bytes()); err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
 	return nil
