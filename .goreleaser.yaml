@@ -44,4 +44,4 @@ changelog:
 
 release:
   footer: |
-    **Instalação:** `go install github.com/almeidazs/chess/cmd/tchess@{{ .Tag }}`
+    **Instalação:** `go install github.com/almeidazs/tchess/cmd/tchess@{{ .Tag }}`

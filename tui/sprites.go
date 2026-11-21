@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // sprite is pixel art for one piece, drawn in the piece's colors. Legend:

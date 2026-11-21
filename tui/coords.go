@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // SquareCenter returns the terminal cell at the center of sq as currently

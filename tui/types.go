@@ -3,8 +3,8 @@ package tui
 import (
 	"time"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // This file holds the interface's state types. Their behavior lives in the

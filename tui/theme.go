@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // Theme is a board palette plus the interface's accent color. Each

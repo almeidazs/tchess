@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/sound"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/sound"
 )
 
 // The move prompt (':') accepts SAN and coordinate notation and is lenient

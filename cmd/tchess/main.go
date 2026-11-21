@@ -21,10 +21,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/clock"
-	"github.com/almeidazs/chess/internal/config"
-	"github.com/almeidazs/chess/internal/sound"
-	"github.com/almeidazs/chess/tui"
+	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
+	"github.com/almeidazs/tchess/internal/sound"
+	"github.com/almeidazs/tchess/tui"
 )
 
 // version is set at build time: -ldflags "-X main.version=v1.2.3".

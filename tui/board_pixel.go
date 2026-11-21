@@ -5,8 +5,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // pixelBoard draws the board as sprites on a canvas, one line per terminal

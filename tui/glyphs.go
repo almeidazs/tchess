@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // Classic diagram glyphs: outlined for White, filled for Black, both drawn in

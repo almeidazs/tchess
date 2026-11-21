@@ -6,10 +6,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
-	"github.com/almeidazs/chess/internal/config"
-	"github.com/almeidazs/chess/internal/sound"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
+	"github.com/almeidazs/tchess/internal/sound"
 )
 
 // lowTime is when a clock turns red and the warning sound plays.

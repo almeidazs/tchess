@@ -3,7 +3,7 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // activate handles a click or Enter on sq: move the selected piece there,

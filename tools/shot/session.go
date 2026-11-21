@@ -5,9 +5,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
-	"github.com/almeidazs/chess/tui"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/tui"
 )
 
 // session drives a model with a fake clock and mirrors the game to resolve

@@ -3,7 +3,7 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // hover returns the square under the pointer, if it is on the board.

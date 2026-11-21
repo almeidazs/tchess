@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 func TestClickToMoveAndFlip(t *testing.T) {

@@ -1,11 +1,11 @@
-module github.com/almeidazs/chess/tools/shot
+module github.com/almeidazs/tchess/tools/shot
 
 go 1.27.4
 
-replace github.com/almeidazs/chess => ../..
+replace github.com/almeidazs/tchess => ../..
 
 require (
-	github.com/almeidazs/chess v0.0.0
+	github.com/almeidazs/tchess v0.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/muesli/termenv v0.16.0

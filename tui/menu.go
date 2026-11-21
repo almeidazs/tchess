@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/almeidazs/chess/clock"
+	"github.com/almeidazs/tchess/clock"
 )
 
 var menuItems = []menuItem{

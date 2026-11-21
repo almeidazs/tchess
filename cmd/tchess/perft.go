@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // runPerft implements "chess perft <depth> [fen]": node counts per root

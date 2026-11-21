@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // spriteSets holds one set per board size (keyed by cell width), indexed by

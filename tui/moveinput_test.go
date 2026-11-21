@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/sound"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/sound"
 )
 
 // matchFEN matches text in the position given by fen.

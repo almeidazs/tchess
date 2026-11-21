@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
 )
 
 func TestMoveAnimation(t *testing.T) {

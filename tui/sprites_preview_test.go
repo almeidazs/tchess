@@ -10,9 +10,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // TestSpritePreview writes a PNG of every sprite set on a board, for

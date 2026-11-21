@@ -7,8 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 const (

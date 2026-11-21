@@ -3,7 +3,7 @@ package clock
 import (
 	"time"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // Clock tracks both players' remaining time. Only one side's time runs at a

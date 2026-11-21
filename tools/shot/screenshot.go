@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
 )
 
 // screenshot renders the README picture: a Møller Attack position with the

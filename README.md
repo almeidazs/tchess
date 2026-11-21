@@ -43,15 +43,15 @@ e todas as regras da FIDE valem, de en passant à regra dos 75 lances.
 Com Go 1.27 ou mais recente:
 
 ```sh
-go install github.com/almeidazs/chess/cmd/tchess@latest
+go install github.com/almeidazs/tchess/cmd/tchess@latest
 ```
 
-Há binários para Linux, macOS e Windows (amd64 e arm64) na página de [releases](https://github.com/almeidazs/chess/releases).
+Há binários para Linux, macOS e Windows (amd64 e arm64) na página de [releases](https://github.com/almeidazs/tchess/releases).
 
 Para compilar a partir do código:
 
 ```sh
-git clone https://github.com/almeidazs/chess.git
+git clone https://github.com/almeidazs/tchess.git
 cd chess
 make run
 ```

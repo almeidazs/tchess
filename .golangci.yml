@@ -57,4 +57,4 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/almeidazs/chess
+        - github.com/almeidazs/tchess

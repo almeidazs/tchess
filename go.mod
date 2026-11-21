@@ -1,4 +1,4 @@
-module github.com/almeidazs/chess
+module github.com/almeidazs/tchess
 
 go 1.27.4
 

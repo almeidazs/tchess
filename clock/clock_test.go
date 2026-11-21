@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 type fakeTime struct{ t time.Time }

@@ -3,8 +3,8 @@ package tui
 import (
 	"strings"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/internal/pixel"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/internal/pixel"
 )
 
 // boardState gathers the per-frame data the square renderers need.

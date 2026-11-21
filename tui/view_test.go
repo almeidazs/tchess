@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/almeidazs/chess/chess"
-	"github.com/almeidazs/chess/clock"
+	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
 )
 
 func TestViewRenders(t *testing.T) {

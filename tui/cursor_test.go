@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 func TestCursorStopsOnMovablePieces(t *testing.T) {

@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // User-facing strings (Portuguese). The engine only exposes enums; all

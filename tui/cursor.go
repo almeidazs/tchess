@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/almeidazs/chess/chess"
+	"github.com/almeidazs/tchess/chess"
 )
 
 // The keyboard cursor only stops on squares where Enter does something
