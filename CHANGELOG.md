@@ -1,24 +1,24 @@
 # Changelog
 
-As mudanças de cada versão ficam aqui. O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/). As notas de cada release no GitHub são geradas a partir dos commits.
+Every release's changes are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). The notes of each GitHub release are generated from the commits.
 
-## [Não lançado]
+## [Unreleased]
 
-Primeira versão.
+First release.
 
-### Adicionado
+### Added
 
-- Motor de regras com bitboards: lances legais, roque, en passant, promoção, xeque, mate e afogamento, conferido por perft.
-- Todos os finais de partida da FIDE: material insuficiente, repetição quíntupla e regra dos 75 lances automáticas; repetição tripla e regra dos 50 lances reivindicáveis; acordo, desistência e queda de seta.
-- Interface no terminal com peças em pixel art em três tamanhos, tabuleiro que gira para quem vai jogar (opcional) e animação de cada lance.
-- Mouse (arrastar ou clicar) e teclado (setas que param só em lances possíveis), além de lance digitado depois de `:` em SAN ou coordenadas.
-- Relógio com incremento Fischer, tempo gasto em cada lance e peças capturadas.
-- Seis temas de tabuleiro com prévia no menu, sons gerados pelo próprio programa e ajuda com todos os atalhos no `?`.
-- Voltar lances com o aceite do adversário, um de cada vez ou até uma posição escolhida na revisão.
-- Revisão de qualquer posição anterior, pelo histórico ou com `[` e `]`.
-- PGN: partidas terminadas salvas sozinhas, exportação com `[%clk]` e `[%emt]`, importação de arquivos com uma ou várias partidas e escolha do ritmo para continuar uma partida inacabada.
-- Retomar a partida interrompida, com os relógios como estavam.
-- Preferências em `~/.tchess/config.toml`.
-- Pacotes deb, rpm, apk e Arch e imagem Docker em `ghcr.io/almeidazs/tchess`.
+- Bitboard rules engine: legal moves, castling, en passant, promotion, check, checkmate and stalemate, verified with perft.
+- Every FIDE game ending: insufficient material, fivefold repetition and the 75-move rule end the game automatically; threefold repetition and the 50-move rule can be claimed; plus agreement, resignation and flag fall.
+- Terminal interface with pixel-art pieces in three sizes, a board that turns to face the player to move (optional) and an animation for every move.
+- Mouse (drag or click) and keyboard (arrows that only stop on playable squares), plus moves typed after `:` in SAN or coordinates.
+- Fischer-increment clock, time spent on each move and captured pieces.
+- Six board themes with a preview in the menu, sounds synthesized by the program itself and a help card with every shortcut on `?`.
+- Taking moves back with the opponent's consent, one at a time or back to a position picked while reviewing.
+- Review of any earlier position, from the move list or with `[` and `]`.
+- PGN: finished games saved automatically, export with `[%clk]` and `[%emt]`, import of files with one or several games, and a choice of time control to continue an unfinished game.
+- Resuming an interrupted game, with the clocks as they were.
+- Preferences in `~/.tchess/config.toml`.
+- deb, rpm, apk and Arch packages and a Docker image at `ghcr.io/almeidazs/tchess`.
 
-[Não lançado]: https://github.com/almeidazs/tchess/commits/main
+[Unreleased]: https://github.com/almeidazs/tchess/commits/main

@@ -1,25 +1,25 @@
-# Segurança
+# Security
 
-## Versões com suporte
+## Supported versions
 
-Só a versão mais recente recebe correções de segurança. Antes de relatar, confira se o problema acontece nela (`tchess --version`).
+Only the latest release gets security fixes. Before reporting, check that the problem happens there (`tchess --version`).
 
-## Como relatar
+## Reporting a vulnerability
 
-Não abra uma issue pública. Use o relato privado do GitHub, em [Security → Report a vulnerability](https://github.com/almeidazs/tchess/security/advisories/new), e conte:
+Please don't open a public issue. Use GitHub's private reporting, under [Security → Report a vulnerability](https://github.com/almeidazs/tchess/security/advisories/new), and include:
 
-- a versão do tchess e o sistema operacional;
-- os passos para reproduzir, com o arquivo PGN ou a config envolvida, se houver;
-- o que um atacante consegue fazer com isso.
+- the tchess version and your operating system;
+- steps to reproduce, with the PGN file or config involved, if any;
+- what an attacker could do with it.
 
-A primeira resposta sai em até 7 dias. Confirmado o problema, a correção vai numa nova versão e o relato é publicado junto, com crédito para quem encontrou, se a pessoa quiser.
+You'll get a first answer within 7 days. Once the problem is confirmed, the fix ships in a new release and the advisory is published with it, crediting whoever found it if they want.
 
-## O que conta como vulnerabilidade
+## What counts as a vulnerability
 
-O tchess não usa a rede. O que ele faz fora do terminal é:
+tchess doesn't use the network. Outside the terminal, it only:
 
-- ler arquivos PGN escolhidos por quem joga (pelo menu ou por `--pgn`);
-- ler e gravar a config, as partidas e os sons em `~/.tchess`;
-- chamar o player de áudio do sistema (`pw-play`, `paplay`, `aplay`, `afplay` ou PowerShell) passando o caminho de um arquivo WAV que ele mesmo gerou.
+- reads PGN files the player chooses (from the menu or with `--pgn`);
+- reads and writes its config, games and sounds in `~/.tchess`;
+- runs the system audio player (`pw-play`, `paplay`, `aplay`, `afplay` or PowerShell) with the path of a WAV file it generated itself.
 
-Interessam principalmente um PGN que faça o programa travar, consumir memória sem limite ou fechar; uma gravação fora de `~/.tchess`; e qualquer forma de executar comandos pelo caminho de um arquivo. Problemas de regras de xadrez ou da interface são bugs comuns e podem ir direto para as [issues](https://github.com/almeidazs/tchess/issues).
+The interesting cases are a PGN file that makes the program hang, use unbounded memory or crash; a write outside `~/.tchess`; and any way to run commands through a file path. Chess rule mistakes and interface problems are ordinary bugs and can go straight to the [issues](https://github.com/almeidazs/tchess/issues).
