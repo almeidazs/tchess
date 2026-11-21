@@ -2,7 +2,7 @@
 //
 //	tchess                  open the menu
 //	tchess --time 5+3       start a 5 min + 3 s game right away (--time none: no clock)
-//	tchess --theme Oceano   use a board theme for this run
+//	tchess --theme Ocean    use a board theme for this run
 //	tchess --no-sound       play without sound for this run
 //	tchess --pgn game.pgn   open a game from a PGN file
 //	tchess perft 5 [fen]    count move-tree nodes (move generator self-test)
@@ -36,17 +36,17 @@ var version = "dev"
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "perft" {
 		if err := runPerft(os.Args[2:]); err != nil {
-			fmt.Fprintln(os.Stderr, "erro:", err)
+			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(2)
 		}
 		return
 	}
 
-	timeFlag := flag.String("time", "", `controle de tempo "min+seg" (ex.: 5+3) ou "none"; omitido abre o menu`)
-	themeFlag := flag.String("theme", "", "tema do tabuleiro nesta execução: "+strings.Join(tui.ThemeNames(), ", "))
-	noSound := flag.Bool("no-sound", false, "joga sem som nesta execução")
-	pgnFlag := flag.String("pgn", "", "abre uma partida de um arquivo PGN")
-	showVersion := flag.Bool("version", false, "mostra a versão e sai")
+	timeFlag := flag.String("time", "", `time control "min+sec" (e.g. 5+3) or "none"; without it the menu opens`)
+	themeFlag := flag.String("theme", "", "board theme for this run: "+strings.Join(tui.ThemeNames(), ", "))
+	noSound := flag.Bool("no-sound", false, "play without sound this run")
+	pgnFlag := flag.String("pgn", "", "open a game from a PGN file")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("tchess", version)
@@ -62,7 +62,7 @@ func main() {
 		opts.TimeControl = &tc
 	}
 	if *themeFlag != "" && !tui.HasTheme(*themeFlag) {
-		fail(fmt.Errorf("tema desconhecido %q (opções: %s)", *themeFlag, strings.Join(tui.ThemeNames(), ", ")))
+		fail(fmt.Errorf("unknown theme %q (options: %s)", *themeFlag, strings.Join(tui.ThemeNames(), ", ")))
 	}
 	if *pgnFlag != "" {
 		data, err := os.ReadFile(*pgnFlag)
@@ -71,10 +71,10 @@ func main() {
 		}
 		games, err := chess.ParsePGNGames(string(data))
 		if len(games) == 0 {
-			fail(fmt.Errorf("%s: nenhuma partida válida: %w", *pgnFlag, err))
+			fail(fmt.Errorf("%s: no valid game: %w", *pgnFlag, err))
 		}
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "aviso: partidas ignoradas:", err)
+			fmt.Fprintln(os.Stderr, "warning: games skipped:", err)
 		}
 		opts.Import, opts.ImportPath = games, *pgnFlag
 	}
@@ -85,7 +85,7 @@ func main() {
 		path := filepath.Join(dir, "config.toml")
 		cfg, err := config.Load(path)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "aviso:", err, "(usando o padrão)")
+			fmt.Fprintln(os.Stderr, "warning:", err, "(using the defaults)")
 		}
 		opts.Config = cfg
 		opts.Save = func(c config.Config) error { return config.Save(path, c) }
@@ -96,12 +96,12 @@ func main() {
 
 	p := tea.NewProgram(tui.New(opts), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, "erro:", err)
+		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
 
 func fail(err error) {
-	fmt.Fprintln(os.Stderr, "erro:", err)
+	fmt.Fprintln(os.Stderr, "error:", err)
 	os.Exit(2)
 }

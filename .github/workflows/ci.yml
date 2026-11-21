@@ -32,7 +32,7 @@ jobs:
       - name: Perft(6) from the initial position
         if: runner.os == 'Linux'
         run: |
-          nodes=$(go run ./cmd/tchess perft 6 | awk '/^nós:/ {print $2}')
+          nodes=$(go run ./cmd/tchess perft 6 | awk '/^nodes:/ {print $2}')
           echo "perft(6) = $nodes"
           test "$nodes" = "119060324"
 
