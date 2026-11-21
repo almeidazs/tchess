@@ -26,7 +26,7 @@ func (s *saver) save(cfg config.Config) tea.Cmd {
 		return nil
 	}
 	fn := s.fn
-	return s.w.run(func() error { return fn(cfg) }, "Não foi possível salvar as preferências")
+	return s.w.run(func() error { return fn(cfg) }, "Could not save the preferences")
 }
 
 // prefKey handles the keys that work on every screen: help, theme, sound
@@ -65,7 +65,7 @@ func (m *Model) helpKey(key string) tea.Cmd {
 func (m *Model) cycleTheme() tea.Cmd {
 	m.setTheme((m.themeIdx + 1) % len(themes))
 	m.cfg.Theme = m.theme().Name
-	m.say("Tema: " + m.theme().Name)
+	m.say("Theme: " + m.theme().Name)
 	return m.saver.save(m.cfg)
 }
 
@@ -74,10 +74,10 @@ func (m *Model) toggleSound() tea.Cmd {
 	m.soundOn = !m.soundOn
 	m.cfg.Sound = m.soundOn
 	if m.soundOn {
-		m.say("Som ligado")
+		m.say("Sound on")
 		m.player.Play(sound.Move) // let the player hear it works
 	} else {
-		m.say("Som desligado")
+		m.say("Sound off")
 	}
 	return m.saver.save(m.cfg)
 }
@@ -87,7 +87,7 @@ func (m *Model) toggleSound() tea.Cmd {
 func (m *Model) toggleFlip() tea.Cmd {
 	m.flip = !m.flip
 	m.cfg.Flip = m.flip
-	m.say("Girar tabuleiro: " + yesNo(m.flip))
+	m.say("Turn the board: " + yesNo(m.flip))
 	if m.game != nil && m.anim == nil {
 		m.orientation = m.facing()
 	}
@@ -103,12 +103,12 @@ func (m *Model) facing() chess.Color {
 	return chess.White
 }
 
-// yesNo is "sim" or "não".
+// yesNo is "yes" or "no".
 func yesNo(b bool) string {
 	if b {
-		return "sim"
+		return "yes"
 	}
-	return "não"
+	return "no"
 }
 
 // rememberTimeControl saves the time control chosen in the menu.

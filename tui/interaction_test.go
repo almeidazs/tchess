@@ -151,7 +151,7 @@ func TestClaimThreefoldWithKey(t *testing.T) {
 			click(m, mv[1])
 		}
 	}
-	if !strings.Contains(ansi.Strip(m.View()), "reivindicar empate") {
+	if !strings.Contains(ansi.Strip(m.View()), "claim a draw") {
 		t.Fatal("status bar should offer the claim")
 	}
 	key(m, "d")

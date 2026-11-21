@@ -219,9 +219,9 @@ func (m *Model) submitInput() tea.Cmd {
 		m.mode = modePromotion
 		return nil
 	case len(im.exact) > 1:
-		m.inputErr = "Ambíguo: " + m.sanList(im.exact)
+		m.inputErr = "Ambiguous: " + m.sanList(im.exact)
 	default:
-		m.inputErr = "Lance ilegal ou incompleto"
+		m.inputErr = "Illegal or incomplete move"
 	}
 	m.sfx(sound.Error)
 	return nil
@@ -233,18 +233,18 @@ func (m *Model) inputHint() string {
 		return dangerStyle.Render(m.inputErr)
 	}
 	if strings.TrimSpace(m.input) == "" {
-		return dimStyle.Render("ex.: Nf3, exd5, O-O, e8=Q, e2e4")
+		return dimStyle.Render("e.g. Nf3, exd5, O-O, e8=Q, e2e4")
 	}
 	im := m.currentMatch()
 	switch {
 	case len(im.exact) == 1:
 		return dimStyle.Render("→ ") + m.st.accent.Render(m.sanList(im.exact))
 	case len(im.exact) > 1:
-		return m.st.accent.Render("Ambíguo: " + m.sanList(im.exact))
+		return m.st.accent.Render("Ambiguous: " + m.sanList(im.exact))
 	case samePromotion(im.prefix):
-		return dimStyle.Render("promoção: enter escolhe a peça")
+		return dimStyle.Render("promotion: enter picks the piece")
 	case len(im.prefix) == 0:
-		return dangerStyle.Render("nenhum lance legal começa assim")
+		return dangerStyle.Render("no legal move starts like this")
 	}
 	return ""
 }
@@ -268,12 +268,12 @@ func (m *Model) inputMarks() (pieces, targets chess.Bitboard) {
 	return pieces, targets
 }
 
-// sanList joins the moves' SAN with "ou", without check marks.
+// sanList joins the moves' SAN with "or", without check marks.
 func (m *Model) sanList(moves []chess.Move) string {
 	pos := m.game.Position()
 	names := make([]string, 0, len(moves))
 	for _, mv := range moves {
 		names = append(names, strings.TrimRight(pos.SAN(mv), "+#"))
 	}
-	return strings.Join(names, " ou ")
+	return strings.Join(names, " or ")
 }

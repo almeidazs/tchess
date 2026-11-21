@@ -29,13 +29,13 @@ func selectEntry(t *testing.T, m *Model, kind entryKind) {
 func TestMenuListsOptions(t *testing.T) {
 	m, _, _ := newPrefsModel(t, Options{Config: config.Default()})
 	view := m.menuView()
-	for _, want := range []string{"Opções", "Tema", "Madeira ›", "Girar tabuleiro", "sim", "Abrir PGN"} {
+	for _, want := range []string{"Options", "Theme", "Wood ›", "Turn the board", "yes", "Open PGN"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("menu lacks %q:\n%s", want, view)
 		}
 	}
-	if strings.Contains(view, "Continuar") {
-		t.Fatal("no saved game, no Continuar entry")
+	if strings.Contains(view, "Continue") {
+		t.Fatal("no saved game, no Continue entry")
 	}
 }
 
@@ -43,7 +43,7 @@ func TestMenuFlipEntry(t *testing.T) {
 	m, rec, _ := newPrefsModel(t, Options{Config: config.Default()})
 	selectEntry(t, m, entryFlip)
 	press(m, "enter")
-	if m.flip || rec.last(t).Flip || !strings.Contains(m.menuView(), "não") {
+	if m.flip || rec.last(t).Flip || m.menuEntries()[m.menu.cursor].right != "no" {
 		t.Fatal("the menu entry should turn board turning off and save it")
 	}
 
@@ -73,7 +73,7 @@ func TestFlipOffKeepsWhiteBelow(t *testing.T) {
 	if m.orientation != chess.Black || !rec.last(t).Flip {
 		t.Fatal("f turns the board to the side to move at once and saves it")
 	}
-	if !strings.Contains(m.statusView(), "Girar tabuleiro: sim") {
+	if !strings.Contains(m.statusView(), "Turn the board: yes") {
 		t.Fatalf("status %q", m.statusView())
 	}
 }
@@ -92,11 +92,11 @@ func TestThemePicker(t *testing.T) {
 		}
 	}
 	press(m, "down")
-	if m.theme().Name != "Floresta" {
+	if m.theme().Name != "Forest" {
 		t.Fatal("moving the cursor previews the theme")
 	}
 	press(m, "esc")
-	if m.screen != screenMenu || m.theme().Name != "Madeira" || len(rec.saved) != 0 {
+	if m.screen != screenMenu || m.theme().Name != "Wood" || len(rec.saved) != 0 {
 		t.Fatal("esc restores the previous theme without saving")
 	}
 
@@ -104,10 +104,10 @@ func TestThemePicker(t *testing.T) {
 	press(m, "down")
 	press(m, "down")
 	press(m, "enter")
-	if m.screen != screenMenu || m.theme().Name != "Oceano" || rec.last(t).Theme != "Oceano" {
+	if m.screen != screenMenu || m.theme().Name != "Ocean" || rec.last(t).Theme != "Ocean" {
 		t.Fatalf("enter keeps and saves the theme: %q", m.theme().Name)
 	}
-	if !strings.Contains(m.menuView(), "Oceano ›") {
+	if !strings.Contains(m.menuView(), "Ocean ›") {
 		t.Fatal("the menu shows the chosen theme")
 	}
 }
@@ -204,7 +204,7 @@ func TestOpenPickerTypedPath(t *testing.T) {
 	other := writePGN(t, filepath.Join(dir, "elsewhere"), "game.pgn", "[Result \"0-1\"]\n\n1. f3 e5 2. g4 Qh4# 0-1", time.Unix(0, 0))
 	m := newDiskModel(t, dir, &fakeTime{time.Unix(0, 0)}, config.Default())
 	m.openPicker()
-	if !strings.Contains(m.View(), "Nenhuma partida ainda") {
+	if !strings.Contains(m.View(), "No games yet") {
 		t.Fatal("an empty folder says so")
 	}
 	press(m, "enter") // the only entry: type a path
@@ -215,7 +215,7 @@ func TestOpenPickerTypedPath(t *testing.T) {
 		press(m, string(r))
 	}
 	press(m, "enter")
-	if m.screen != screenOpen || m.open.err != "Arquivo não encontrado" {
+	if m.screen != screenOpen || m.open.err != "File not found" {
 		t.Fatalf("missing file: %q", m.open.err)
 	}
 	m.open.editing, m.open.input = true, other
@@ -231,7 +231,7 @@ func TestOpenPickerBadFile(t *testing.T) {
 	m := newDiskModel(t, dir, &fakeTime{time.Unix(0, 0)}, config.Default())
 	m.openPicker()
 	press(m, "enter")
-	if m.screen != screenOpen || !strings.Contains(m.open.err, "PGN inválido") {
+	if m.screen != screenOpen || !strings.Contains(m.open.err, "Invalid PGN") {
 		t.Fatalf("bad file: screen %v err %q", m.screen, m.open.err)
 	}
 	press(m, "esc")
@@ -252,19 +252,19 @@ const twoGames = `[White "Ana"]
 
 1. d4 d5 *
 
-[White "Quebrada"]
+[White "Broken"]
 
 1. e4 e4 *
 `
 
 func TestOpenPickerListsGamesOfAFile(t *testing.T) {
 	dir := t.TempDir()
-	writePGN(t, filepath.Join(dir, "games"), "torneio.pgn", twoGames, time.Unix(0, 0))
+	writePGN(t, filepath.Join(dir, "games"), "tournament.pgn", twoGames, time.Unix(0, 0))
 	m := newDiskModel(t, dir, &fakeTime{time.Unix(0, 0)}, config.Default())
 	m.openPicker()
 	press(m, "enter")
 	view := m.View()
-	for _, want := range []string{"torneio.pgn · 2 partidas", "1. Ana x Bia", "1-0 · 4 lances", "2. Caio x Pretas", "* · 1 lances", "1 partida(s) inválida(s) ignorada(s)"} {
+	for _, want := range []string{"tournament.pgn · 2 games", "1. Ana vs Bia", "1-0 · 4 moves", "2. Caio vs Black", "* · 1 moves", "1 invalid game(s) skipped"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("games list lacks %q:\n%s", want, view)
 		}
@@ -274,7 +274,7 @@ func TestOpenPickerListsGamesOfAFile(t *testing.T) {
 		t.Fatal("esc on the games goes back to the files")
 	}
 	press(m, "enter")
-	press(m, "enter") // Ana x Bia, finished
+	press(m, "enter") // Ana vs Bia, finished
 	if m.screen != screenGame || m.game.Termination() != chess.Checkmate {
 		t.Fatalf("screen %v termination %v", m.screen, m.game.Termination())
 	}
@@ -285,7 +285,7 @@ func TestImportFlagWithSeveralGames(t *testing.T) {
 	if len(games) != 2 || err == nil {
 		t.Fatalf("%d games, err %v", len(games), err)
 	}
-	m := New(Options{Config: config.Default(), Import: games, ImportPath: "/x/torneio.pgn"})
+	m := New(Options{Config: config.Default(), Import: games, ImportPath: "/x/tournament.pgn"})
 	m.Update(teaSize(140, 50))
 	runCmd(m, m.Init())
 	if m.screen != screenOpen || len(m.open.games) != 2 {

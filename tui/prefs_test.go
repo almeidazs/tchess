@@ -87,7 +87,7 @@ func newPrefsModel(t *testing.T, opts Options) (*Model, *saveRecorder, *recordPl
 
 func TestThemeCyclesAndSaves(t *testing.T) {
 	m, rec, _ := newPrefsModel(t, Options{Config: config.Default()})
-	if m.theme().Name != "Madeira" {
+	if m.theme().Name != "Wood" {
 		t.Fatalf("default theme %q", m.theme().Name)
 	}
 	for i := 1; i <= len(themes); i++ {
@@ -97,7 +97,7 @@ func TestThemeCyclesAndSaves(t *testing.T) {
 			t.Fatalf("press %d: theme %q saved %q, want %q", i, m.theme().Name, rec.last(t).Theme, want)
 		}
 	}
-	if !strings.Contains(m.menuView(), "Tema: Madeira") {
+	if !strings.Contains(m.menuView(), "Theme: Wood") {
 		t.Fatal("menu should confirm the theme change")
 	}
 }
@@ -116,12 +116,21 @@ func TestThemeFromConfigAndOverride(t *testing.T) {
 	if m.theme().Name != "Coral" {
 		t.Fatalf("theme from config: %q", m.theme().Name)
 	}
-	m, rec, _ := newPrefsModel(t, Options{Config: config.Config{Theme: "Coral", Sound: true}, Theme: "marmore"})
-	if m.theme().Name != "Mármore" || m.cfg.Theme != "Coral" || len(rec.saved) != 0 {
+	m, rec, _ := newPrefsModel(t, Options{Config: config.Config{Theme: "Coral", Sound: true}, Theme: "marble"})
+	if m.theme().Name != "Marble" || m.cfg.Theme != "Coral" || len(rec.saved) != 0 {
 		t.Fatalf("override: theme %q cfg %q saved %v", m.theme().Name, m.cfg.Theme, rec.saved)
 	}
-	if !HasTheme("OCEANO") || HasTheme("neon") {
+	if !HasTheme("OCEAN") || HasTheme("neon") {
 		t.Fatal("HasTheme")
+	}
+}
+
+func TestOldThemeNamesStillWork(t *testing.T) {
+	for old, want := range map[string]string{"Madeira": "Wood", "grafite": "Graphite", "Mármore": "Marble", "marmore": "Marble"} {
+		m, _, _ := newPrefsModel(t, Options{Config: config.Config{Theme: old}})
+		if m.theme().Name != want {
+			t.Errorf("config theme %q gave %q, want %q", old, m.theme().Name, want)
+		}
 	}
 }
 
@@ -161,7 +170,7 @@ func TestSaveErrorIsShown(t *testing.T) {
 	m := New(Options{Save: func(config.Config) error { return errors.New("disk full") }})
 	m.Update(tea.WindowSizeMsg{Width: 140, Height: 50})
 	press(m, "s")
-	if !strings.Contains(m.menu.notice, "salvar") {
+	if !strings.Contains(m.menu.notice, "save") {
 		t.Fatalf("notice %q", m.menu.notice)
 	}
 }
@@ -263,7 +272,7 @@ func TestLowTimeWarnsOnce(t *testing.T) {
 func TestHelpOverlay(t *testing.T) {
 	m := newGame(t, 140, 50, "5+3")
 	key(m, "?")
-	if !m.help || !strings.Contains(m.View(), "Ajuda") {
+	if !m.help || !strings.Contains(m.View(), "Help") {
 		t.Fatal("? should open the help")
 	}
 	key(m, "d") // other shortcuts are inert while the help is open
@@ -271,7 +280,7 @@ func TestHelpOverlay(t *testing.T) {
 		t.Fatalf("mode %v", m.mode)
 	}
 	key(m, "s") // theme still works, and the card shows it
-	if !strings.Contains(m.View(), "tema: Floresta") {
+	if !strings.Contains(m.View(), "theme: Forest") {
 		t.Fatal("help should show the current theme")
 	}
 	key(m, "?")
@@ -282,7 +291,7 @@ func TestHelpOverlay(t *testing.T) {
 	m = New(Options{})
 	m.Update(tea.WindowSizeMsg{Width: 80, Height: 30})
 	key(m, "?")
-	if !strings.Contains(m.View(), "jogar ou abrir") {
+	if !strings.Contains(m.View(), "play or open") {
 		t.Fatal("menu help should list the menu keys")
 	}
 	key(m, "esc")

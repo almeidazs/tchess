@@ -74,7 +74,7 @@ func TestExportWritesPGN(t *testing.T) {
 	if !strings.Contains(pg.Comments[1], "[%clk 0:02:58.0]") || !strings.Contains(pg.Comments[1], "[%emt 0:00:04.0]") {
 		t.Fatalf("clock comments %q", pg.Comments)
 	}
-	if !strings.Contains(m.notice, "Partida salva em") {
+	if !strings.Contains(m.notice, "Game saved in") {
 		t.Fatalf("notice %q", m.notice)
 	}
 }
@@ -96,7 +96,7 @@ func TestResumeAfterRestart(t *testing.T) {
 	if m2.resume == nil || m2.menuEntries()[0].kind != entryResume || m2.menu.cursor != 0 {
 		t.Fatal("the menu should offer the saved game first")
 	}
-	if !strings.Contains(m2.menuView(), "5+3 · lance 2") {
+	if !strings.Contains(m2.menuView(), "5+3 · move 2") {
 		t.Fatalf("menu:\n%s", m2.menuView())
 	}
 	press(m2, "enter")
@@ -143,7 +143,7 @@ func TestFinishedOrNewGameForgetsSave(t *testing.T) {
 	if m2.resume == nil {
 		t.Fatal("saved game not found")
 	}
-	press(m2, "down") // first time control instead of "Continuar"
+	press(m2, "down") // first time control instead of "Continue"
 	press(m2, "enter")
 	if _, err := os.Stat(path); !errors.Is(err, fs.ErrNotExist) || m2.resume != nil {
 		t.Fatalf("starting another game discards the saved one: %v", err)
@@ -167,14 +167,14 @@ func TestFinishedGamesAreSaved(t *testing.T) {
 		t.Fatalf("finished games go to the games folder: %v %v", files, err)
 	}
 	pg, err := readPGNFile(files[0])
-	if err != nil || pg.Game.Ply() != 2 || pg.Result != chess.BlackWins || pg.Tag("Termination") != "desistência" {
+	if err != nil || pg.Game.Ply() != 2 || pg.Result != chess.BlackWins || pg.Tag("Termination") != "resignation" {
 		t.Fatalf("saved game: %v %+v", err, pg.Tags)
 	}
-	if status := m.statusView(); !strings.Contains(status, "Partida salva em") || strings.Contains(status, "recusado") {
+	if status := m.statusView(); !strings.Contains(status, "Game saved in") || strings.Contains(status, "declined") {
 		t.Fatalf("status %q", status)
 	}
 	press(m, "e")
-	if again, _ := filepath.Glob(filepath.Join(dir, "games", "*.pgn")); len(again) != 1 || !strings.Contains(m.notice, "já está salva") {
+	if again, _ := filepath.Glob(filepath.Join(dir, "games", "*.pgn")); len(again) != 1 || !strings.Contains(m.notice, "already saved") {
 		t.Fatalf("e after the end should not save a copy: %v %q", again, m.notice)
 	}
 
@@ -202,7 +202,7 @@ func TestReopenedGameKeepsItsEnding(t *testing.T) {
 	if m.mode != modeGameOver || m.game.Termination() != chess.DrawAgreement {
 		t.Fatalf("reopened: mode %v termination %v", m.mode, m.game.Termination())
 	}
-	if !strings.Contains(m.statusView(), "acordo mútuo") {
+	if !strings.Contains(m.statusView(), "agreement") {
 		t.Fatalf("status %q", m.statusView())
 	}
 	if !m.resultHidden {
@@ -217,7 +217,7 @@ func TestReopenedGameKeepsItsEnding(t *testing.T) {
 		t.Fatal("esc puts it aside again, without leaving")
 	}
 	press(m, "e")
-	if files, _ := filepath.Glob(filepath.Join(dir, "games", "*.pgn")); len(files) != 1 || !strings.Contains(m.notice, "já está salva") {
+	if files, _ := filepath.Glob(filepath.Join(dir, "games", "*.pgn")); len(files) != 1 || !strings.Contains(m.notice, "already saved") {
 		t.Fatalf("e on a reopened game should not copy it: %v %q", files, m.notice)
 	}
 }
@@ -271,7 +271,7 @@ func TestImportFinishedGame(t *testing.T) {
 	if m.screen != screenGame || m.mode != modeGameOver || m.game.Termination() != chess.RecordedResult {
 		t.Fatalf("screen %v mode %v", m.screen, m.mode)
 	}
-	if !strings.Contains(m.View(), "resultado do PGN") {
+	if !strings.Contains(m.View(), "result from the PGN") {
 		t.Fatal("the result card explains where the result came from")
 	}
 	key(m, "home")
@@ -304,7 +304,7 @@ func TestImportUnfinishedAsksForClocks(t *testing.T) {
 	if m.screen != screenClocks || m.clocks.options[0].src != clocksFromRecord {
 		t.Fatalf("screen %v options %v", m.screen, m.clocks.options)
 	}
-	if !strings.Contains(m.View(), "Relógios do PGN") || !strings.Contains(m.View(), "5:00 · 4:50") {
+	if !strings.Contains(m.View(), "PGN clocks") || !strings.Contains(m.View(), "5:00 · 4:50") {
 		t.Fatalf("view:\n%s", m.View())
 	}
 	press(m, "enter")
@@ -345,6 +345,23 @@ func TestImportUnfinishedAsksForClocks(t *testing.T) {
 	}
 	press(m, "enter")
 	if m.clock != nil || m.mode != modePlay {
-		t.Fatal("Sem relógio plays on without a clock")
+		t.Fatal("No clock plays on without a clock")
+	}
+}
+
+func TestTerminationFromText(t *testing.T) {
+	for text, want := range map[string]chess.Termination{
+		"agreement":           chess.DrawAgreement,
+		"time forfeit":        chess.Timeout,
+		"acordo mútuo":        chess.DrawAgreement, // games saved by older versions
+		"desistência":         chess.Resignation,
+		"repetição tripla":    chess.ThreefoldRepetition,
+		"something else":      chess.RecordedResult,
+		"":                    chess.RecordedResult,
+		"result from the PGN": chess.RecordedResult,
+	} {
+		if got := terminationFromText(text); got != want {
+			t.Errorf("%q: %v, want %v", text, got, want)
+		}
 	}
 }

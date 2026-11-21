@@ -63,7 +63,7 @@ func (f *fileStore) saveResume(pgn string) tea.Cmd {
 	}
 	path := f.resumePath
 	return f.resumeW.run(func() error { return atomicfile.Write(path, []byte(pgn)) },
-		"Não foi possível salvar a partida para retomar")
+		"Could not save the game for resuming")
 }
 
 // clearResume forgets the unfinished game.
@@ -77,7 +77,7 @@ func (f *fileStore) clearResume() tea.Cmd {
 			return err
 		}
 		return nil
-	}, "Não foi possível apagar a partida salva")
+	}, "Could not delete the saved game")
 }
 
 // loadResume reads the unfinished game, if there is one. A file that is
@@ -90,12 +90,12 @@ func (f *fileStore) loadResume() *savedGame {
 	if err != nil || pg.Game.IsOver() || pg.Result != chess.Ongoing || pg.Game.Ply() == 0 {
 		return nil
 	}
-	tc := "sem relógio"
+	tc := "no clock"
 	if t, ok := parsePGNTimeControl(pg.Tag("TimeControl")); ok && !t.Unlimited() {
 		tc = t.String()
 	}
 	pos := pg.Game.Position()
-	return &savedGame{record: pg, label: fmt.Sprintf("%s · lance %d", tc, pos.FullmoveNumber())}
+	return &savedGame{record: pg, label: fmt.Sprintf("%s · move %d", tc, pos.FullmoveNumber())}
 }
 
 // exportedMsg reports an export: the file written, or the error.
@@ -107,7 +107,7 @@ type exportedMsg struct {
 // export writes pgn to a new file named after the moment of the export.
 func (f *fileStore) export(pgn, name string) tea.Cmd {
 	if f.gamesDir == "" {
-		return func() tea.Msg { return exportedMsg{err: errors.New("sem pasta de partidas")} }
+		return func() tea.Msg { return exportedMsg{err: errors.New("no games folder")} }
 	}
 	path := filepath.Join(f.gamesDir, name+".pgn")
 	return func() tea.Msg {

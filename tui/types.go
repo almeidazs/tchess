@@ -157,7 +157,7 @@ const (
 type menuEntry struct {
 	kind  entryKind
 	label string
-	right string // right-aligned detail: time control, theme name, sim/não
+	right string // right-aligned detail: time control, theme name, yes/no
 	tc    string // entryTime: clock.Parse input
 }
 
@@ -226,5 +226,5 @@ type moveClock struct {
 // savedGame is an unfinished game found on disk at startup.
 type savedGame struct {
 	record *chess.PGNGame
-	label  string // e.g. "5+3 · lance 23"
+	label  string // e.g. "5+3 · move 23"
 }

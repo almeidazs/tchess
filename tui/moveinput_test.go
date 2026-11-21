@@ -126,7 +126,7 @@ func TestPromptAmbiguousIsRejected(t *testing.T) {
 	g, _ := chess.NewGameFromFEN("rnbqkbnr/pppppppp/8/8/8/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 1")
 	m.game = g
 	typeKeys(m, ":", "N", "d", "2", "enter")
-	if m.mode != modeInput || !strings.Contains(m.inputErr, "Nbd2 ou Nfd2") {
+	if m.mode != modeInput || !strings.Contains(m.inputErr, "Nbd2 or Nfd2") {
 		t.Fatalf("mode %v err %q", m.mode, m.inputErr)
 	}
 	if len(rec.got) != 1 || rec.got[0] != sound.Error {

@@ -30,8 +30,8 @@ func (m *Model) View() string {
 	l := computeLayout(m.width, m.height)
 	if !l.fits(m.width, m.height) {
 		msg := lipgloss.JoinVertical(lipgloss.Center,
-			m.st.accent.Render("Terminal pequeno demais"),
-			dimStyle.Render(fmt.Sprintf("mínimo %dx%d, atual %dx%d", l.totalW, l.totalH, m.width, m.height)))
+			m.st.accent.Render("Terminal too small"),
+			dimStyle.Render(fmt.Sprintf("needs %dx%d, now %dx%d", l.totalW, l.totalH, m.width, m.height)))
 		ox, oy := centerOffset(m.width, m.height, lipgloss.Width(msg), lipgloss.Height(msg))
 		return place(msg, ox, oy)
 	}

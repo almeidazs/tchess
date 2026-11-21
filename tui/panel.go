@@ -32,7 +32,7 @@ func (m *Model) clockView(c chess.Color, compact bool) string {
 		timeStr = formatClock(rem)
 		low = rem < lowTime
 	} else if active {
-		timeStr = "◀ vez"
+		timeStr = "◀ to move"
 	}
 
 	nameStyle, timeStyle := dimStyle, dimStyle
@@ -116,9 +116,9 @@ func (m *Model) historyView(height int) string {
 	start := m.historyStart(len(rows), visible)
 	rows = rows[start:min(len(rows), start+visible)]
 	if len(rows) == 0 {
-		rows = []string{dimStyle.Render("  nenhum lance ainda")}
+		rows = []string{dimStyle.Render("  no moves yet")}
 	}
-	body := append([]string{dimStyle.Render("Lances")}, rows...)
+	body := append([]string{dimStyle.Render("Moves")}, rows...)
 	for len(body) < inner {
 		body = append(body, "")
 	}

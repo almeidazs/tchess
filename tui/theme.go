@@ -35,7 +35,7 @@ var (
 // themes is the order the s key cycles through. The first is the default.
 var themes = []Theme{
 	{
-		Name:  "Madeira",
+		Name:  "Wood",
 		Light: pixel.Hex("#F0D9B5"), Dark: pixel.Hex("#B58863"),
 		LastLight: pixel.Hex("#CDD26A"), LastDark: pixel.Hex("#AAA23A"),
 		SelLight: pixel.Hex("#9DB86A"), SelDark: pixel.Hex("#7A9A47"),
@@ -45,17 +45,17 @@ var themes = []Theme{
 		Mark:   pixel.Hex("#14551E"),
 		Accent: pixel.Hex("#E2B86B"),
 	},
-	derivedTheme("Floresta", palette{
+	derivedTheme("Forest", palette{
 		light: "#EEEED2", dark: "#769656",
 		last: "#F6F669", sel: "#C7D84A", cursor: "#3D7DD8",
 		mark: "#1F3A12", accent: "#A3C76D",
 	}),
-	derivedTheme("Oceano", palette{
+	derivedTheme("Ocean", palette{
 		light: "#DEE3E6", dark: "#8CA2AD",
 		last: "#E8DC6A", sel: "#7FC97F", cursor: "#F28C28",
 		mark: "#123047", accent: "#7FB2D9",
 	}),
-	derivedTheme("Grafite", palette{
+	derivedTheme("Graphite", palette{
 		light: "#C9C9C9", dark: "#8C8C8C",
 		last: "#E8C65A", sel: "#8FC46A", cursor: "#3D7DD8",
 		mark: "#262626", accent: "#C8CDD6",
@@ -65,7 +65,7 @@ var themes = []Theme{
 		last: "#F2D45C", sel: "#9CC46A", cursor: "#3D7DD8",
 		mark: "#5A1E12", accent: "#F2937C",
 	}),
-	derivedTheme("Mármore", palette{
+	derivedTheme("Marble", palette{
 		light: "#F7F7F4", dark: "#A3A8AE",
 		last: "#F0D04A", sel: "#7FC46A", cursor: "#2F6FD0",
 		mark: "#1B1D21", accent: "#E9EBEE",
@@ -93,14 +93,23 @@ func derivedTheme(name string, p palette) Theme {
 	return th
 }
 
-// themeIndex finds a theme by name, ignoring case and accents ("marmore"
-// matches "Mármore").
+// legacyThemes maps the Portuguese names older versions saved in the
+// config to today's themes, by index.
+var legacyThemes = map[string]int{
+	"madeira": 0, "floresta": 1, "oceano": 2, "grafite": 3, "marmore": 5,
+}
+
+// themeIndex finds a theme by name, ignoring case and accents. The names
+// of older versions ("Grafite", "Mármore") still work.
 func themeIndex(name string) (int, bool) {
 	want := foldName(name)
 	for i, t := range themes {
 		if foldName(t.Name) == want {
 			return i, true
 		}
+	}
+	if i, ok := legacyThemes[want]; ok {
+		return i, true
 	}
 	return 0, false
 }
@@ -120,7 +129,7 @@ func ThemeNames() []string {
 	return out
 }
 
-// accentFolder strips the Portuguese diacritics.
+// accentFolder strips the diacritics of the old Portuguese theme names.
 var accentFolder = strings.NewReplacer(
 	"á", "a", "à", "a", "â", "a", "ã", "a", "é", "e", "ê", "e", "í", "i",
 	"ó", "o", "ô", "o", "õ", "o", "ú", "u", "ç", "c",

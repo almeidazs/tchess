@@ -23,7 +23,7 @@ import (
 const (
 	openInnerW   = 44 // content width
 	openVisible  = 8  // rows of files or games shown at once
-	openTypePath = "Digitar caminho…"
+	openTypePath = "Type a path…"
 )
 
 // openPicker shows the PGN picker.
@@ -31,7 +31,7 @@ func (m *Model) openPicker() {
 	files, err := m.files.listGames()
 	m.open = openState{files: files}
 	if err != nil {
-		m.open.err = "Não foi possível ler a pasta de partidas"
+		m.open.err = "Could not read the games folder"
 	}
 	m.screen = screenOpen
 }
@@ -128,18 +128,18 @@ func (m *Model) openFile(path string) tea.Cmd {
 	data, err := os.ReadFile(path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		m.open.err = "Arquivo não encontrado"
+		m.open.err = "File not found"
 		return nil
 	case errors.Is(err, fs.ErrPermission):
-		m.open.err = "Sem permissão para ler o arquivo"
+		m.open.err = "No permission to read the file"
 		return nil
 	case err != nil:
-		m.open.err = "Não foi possível ler o arquivo"
+		m.open.err = "Could not read the file"
 		return nil
 	}
 	games, perr := chess.ParsePGNGames(string(data))
 	if len(games) == 0 {
-		m.open.err = "PGN inválido ou com lance ilegal"
+		m.open.err = "Invalid PGN or illegal move"
 		return nil
 	}
 	m.open.editing, m.open.err = false, ""
@@ -148,7 +148,7 @@ func (m *Model) openFile(path string) tea.Cmd {
 	}
 	m.showGames(games, path, true)
 	if skipped := countErrors(perr); skipped > 0 {
-		m.open.err = fmt.Sprintf("%d partida(s) inválida(s) ignorada(s)", skipped)
+		m.open.err = fmt.Sprintf("%d invalid game(s) skipped", skipped)
 	}
 	return nil
 }
@@ -185,7 +185,7 @@ func gameLabel(i int, pg *chess.PGNGame) string {
 		}
 		return colorName(c)
 	}
-	return fmt.Sprintf("%d. %s x %s", i+1, player("White", chess.White), player("Black", chess.Black))
+	return fmt.Sprintf("%d. %s vs %s", i+1, player("White", chess.White), player("Black", chess.Black))
 }
 
 // gameDetail sums a game up: result and length.
@@ -194,7 +194,7 @@ func gameDetail(pg *chess.PGNGame) string {
 	if pg.Game.IsOver() {
 		result = outcomeScore(pg.Game.Outcome())
 	}
-	return fmt.Sprintf("%s · %d lances", result, (pg.Game.Ply()+1)/2)
+	return fmt.Sprintf("%s · %d moves", result, (pg.Game.Ply()+1)/2)
 }
 
 // window is the first row shown of n rows so that cursor stays visible;
@@ -211,7 +211,7 @@ func window(cursor, n int) int {
 func (m *Model) openLines() (lines []string, rows map[int]int) {
 	o := &m.open
 	rows = map[int]int{}
-	lines = []string{center(m.st.title.Render("Abrir PGN"), openInnerW)}
+	lines = []string{center(m.st.title.Render("Open PGN"), openInnerW)}
 
 	entry := func(i, cursor int, label, right string) {
 		rows[len(lines)] = i
@@ -226,7 +226,7 @@ func (m *Model) openLines() (lines []string, rows map[int]int) {
 	}
 
 	if o.games != nil {
-		sub := fmt.Sprintf("%s · %d partidas", filepath.Base(o.source), len(o.games))
+		sub := fmt.Sprintf("%s · %d games", filepath.Base(o.source), len(o.games))
 		lines = append(lines, center(dimStyle.Render(truncate(sub, openInnerW)), openInnerW), "")
 		start := window(o.gameCursor, len(o.games))
 		for i := start; i < len(o.games) && i < start+openVisible; i++ {
@@ -238,7 +238,7 @@ func (m *Model) openLines() (lines []string, rows map[int]int) {
 		}
 		lines = append(lines, "")
 		if len(o.files) == 0 {
-			lines = append(lines, dimStyle.Render("  Nenhuma partida ainda: as terminadas"), dimStyle.Render("  aparecem aqui"))
+			lines = append(lines, dimStyle.Render("  No games yet: finished games"), dimStyle.Render("  show up here"))
 		}
 		start := window(o.cursor, len(o.files))
 		for i := start; i < len(o.files) && i < start+openVisible; i++ {
@@ -252,13 +252,13 @@ func (m *Model) openLines() (lines []string, rows map[int]int) {
 	lines = append(lines, "")
 	switch {
 	case o.editing:
-		lines = append(lines, textStyle.Render("caminho: ")+m.st.accent.Render(truncate(o.input, openInnerW-10)+"▌"))
+		lines = append(lines, textStyle.Render("path: ")+m.st.accent.Render(truncate(o.input, openInnerW-10)+"▌"))
 	case o.err != "":
 		lines = append(lines, dangerStyle.Render(truncate(o.err, openInnerW)))
 	default:
 		lines = append(lines, "")
 	}
-	help := [][2]string{{"↑↓", "escolher"}, {"enter", "abrir"}, {"esc", "voltar"}}
+	help := [][2]string{{"↑↓", "choose"}, {"enter", "open"}, {"esc", "back"}}
 	return append(lines, "", m.helpLine(help)), rows
 }
 

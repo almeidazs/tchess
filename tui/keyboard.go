@@ -53,7 +53,7 @@ func (m *Model) gameKey(key string) tea.Cmd {
 
 	case modeConfirmResign:
 		switch key {
-		case "y", "s":
+		case "y":
 			return m.conclude(m.game.Resign(m.game.Turn()))
 		case "n", "esc":
 			m.mode = modePlay
@@ -61,25 +61,25 @@ func (m *Model) gameKey(key string) tea.Cmd {
 
 	case modeDrawOffer:
 		switch key {
-		case "y", "s":
+		case "y":
 			return m.conclude(m.game.AgreeDraw())
 		case "n", "esc":
 			m.mode = modePlay
-			m.notice = "Empate recusado"
+			m.notice = "Draw declined"
 		}
 
 	case modeUndoOffer:
 		switch key {
-		case "y", "s":
+		case "y":
 			return m.undo()
 		case "n", "esc":
 			m.mode = modePlay
-			m.notice = "Pedido para voltar o lance recusado"
+			m.notice = "Take-back declined"
 		}
 
 	case modeConfirmQuit:
 		switch key {
-		case "y", "s":
+		case "y":
 			return tea.Quit
 		case "n", "esc":
 			m.mode = modePlay

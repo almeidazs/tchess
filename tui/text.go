@@ -4,56 +4,76 @@ import (
 	"github.com/almeidazs/tchess/chess"
 )
 
-// User-facing strings (Portuguese). The engine only exposes enums; all
+// User-facing strings. The engine only exposes enums; all
 // wording lives here.
 
-// colorName is the side's name in Portuguese.
+// colorName is the side's name.
 func colorName(c chess.Color) string {
 	if c == chess.White {
-		return "Brancas"
+		return "White"
 	}
-	return "Pretas"
+	return "Black"
 }
 
 // terminationText explains how a game ended.
 func terminationText(t chess.Termination) string {
 	switch t {
 	case chess.Checkmate:
-		return "xeque-mate"
+		return "checkmate"
 	case chess.Stalemate:
-		return "afogamento"
+		return "stalemate"
 	case chess.InsufficientMaterial:
-		return "material insuficiente"
+		return "insufficient material"
 	case chess.FivefoldRepetition:
-		return "repetição quíntupla"
+		return "fivefold repetition"
 	case chess.SeventyFiveMoveRule:
-		return "regra dos 75 lances"
+		return "75-move rule"
 	case chess.ThreefoldRepetition:
-		return "repetição tripla"
+		return "threefold repetition"
 	case chess.FiftyMoveRule:
-		return "regra dos 50 lances"
+		return "50-move rule"
 	case chess.DrawAgreement:
-		return "acordo mútuo"
+		return "agreement"
 	case chess.Resignation:
-		return "desistência"
+		return "resignation"
 	case chess.Timeout:
-		return "tempo esgotado"
+		return "time forfeit"
 	case chess.TimeoutVsInsufficientMaterial:
-		return "tempo esgotado, sem material para mate"
+		return "time forfeit, no mating material"
 	case chess.RecordedResult:
-		return "resultado do PGN"
+		return "result from the PGN"
 	}
 	return ""
 }
 
-// terminationFromText reads back a reason written by terminationText, as
-// in the Termination tag of the games tchess saves. Anything else is
-// RecordedResult.
+// legacyTerminations are the reasons older versions wrote, in Portuguese,
+// in the Termination tag of the games they saved.
+var legacyTerminations = map[string]chess.Termination{
+	"xeque-mate":                             chess.Checkmate,
+	"afogamento":                             chess.Stalemate,
+	"material insuficiente":                  chess.InsufficientMaterial,
+	"repetição quíntupla":                    chess.FivefoldRepetition,
+	"regra dos 75 lances":                    chess.SeventyFiveMoveRule,
+	"repetição tripla":                       chess.ThreefoldRepetition,
+	"regra dos 50 lances":                    chess.FiftyMoveRule,
+	"acordo mútuo":                           chess.DrawAgreement,
+	"desistência":                            chess.Resignation,
+	"tempo esgotado":                         chess.Timeout,
+	"tempo esgotado, sem material para mate": chess.TimeoutVsInsufficientMaterial,
+	"resultado do PGN":                       chess.RecordedResult,
+}
+
+// terminationFromText reads back a reason written by terminationText (or
+// by an older version), as in the Termination tag of the games tchess
+// saves. Anything else is RecordedResult.
 func terminationFromText(s string) chess.Termination {
 	for t := chess.Checkmate; t <= chess.RecordedResult; t++ {
 		if s != "" && terminationText(t) == s {
 			return t
 		}
+	}
+	if t, ok := legacyTerminations[s]; ok {
+		return t
 	}
 	return chess.RecordedResult
 }
@@ -62,11 +82,11 @@ func terminationFromText(s string) chess.Termination {
 func outcomeHeadline(o chess.Outcome) string {
 	switch o {
 	case chess.WhiteWins:
-		return "Brancas vencem"
+		return "White wins"
 	case chess.BlackWins:
-		return "Pretas vencem"
+		return "Black wins"
 	case chess.Draw:
-		return "Empate"
+		return "Draw"
 	}
 	return ""
 }

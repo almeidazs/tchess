@@ -13,34 +13,34 @@ type helpEntry struct{ key, long, short string }
 // helpEntries lists the keys of the current screen, with the theme, sound
 // and board-turning state shown next to their keys.
 func (m *Model) helpEntries() []helpEntry {
-	soundState := "ligado"
+	soundState := "on"
 	if !m.soundOn {
-		soundState = "desligado"
+		soundState = "off"
 	}
 	prefs := []helpEntry{
-		{"s", "tema: " + m.theme().Name, "tema"},
-		{"m", "som: " + soundState, "som"},
-		{"f", "girar o tabuleiro: " + yesNo(m.flip), "girar"},
-		{"?", "fechar a ajuda", "fechar"},
-		{"q", "sair", "sair"},
+		{"s", "theme: " + m.theme().Name, "theme"},
+		{"m", "sound: " + soundState, "sound"},
+		{"f", "turn the board: " + yesNo(m.flip), "turn"},
+		{"?", "close the help", "close"},
+		{"q", "quit", "quit"},
 	}
 	if m.screen == screenMenu {
 		return append([]helpEntry{
-			{"↑↓  jk", "escolher", "escolher"},
-			{"enter", "jogar ou abrir", "abrir"},
+			{"↑↓  jk", "choose", "choose"},
+			{"enter", "play or open", "open"},
 		}, prefs...)
 	}
 	return append([]helpEntry{
-		{"mouse", "clicar ou arrastar a peça", "arrastar"},
-		{"←↑↓→  hjkl", "mover o cursor", "cursor"},
-		{"enter", "selecionar e jogar", "jogar"},
-		{":", "digitar o lance (Nf3, e2e4)", "digitar"},
-		{"esc", "cancelar", "cancelar"},
-		{"u", "voltar o lance (na revisão, até ali)", "voltar"},
-		{"[  ]", "rever lances (no fim, ←→)", "rever"},
-		{"e", "exportar a partida em PGN", "exportar"},
-		{"d", "propor ou reivindicar empate", "empate"},
-		{"r", "desistir", "desistir"},
+		{"mouse", "click or drag a piece", "drag"},
+		{"←↑↓→  hjkl", "move the cursor", "cursor"},
+		{"enter", "select and play", "play"},
+		{":", "type a move (Nf3, e2e4)", "type"},
+		{"esc", "cancel", "cancel"},
+		{"u", "take back (in review: to there)", "take back"},
+		{"[  ]", "review moves (at the end, ←→)", "review"},
+		{"e", "export the game as PGN", "export"},
+		{"d", "offer or claim a draw", "draw"},
+		{"r", "resign", "resign"},
 	}, prefs...)
 }
 
@@ -101,12 +101,12 @@ func (m *Model) helpCard(rows []string, roomy bool) string {
 	for _, r := range rows {
 		width = max(width, lipgloss.Width(r))
 	}
-	title := cardLine(m.st.title.Background(panelBg).Render("Ajuda"), width, lipgloss.Center)
+	title := cardLine(m.st.title.Background(panelBg).Render("Help"), width, lipgloss.Center)
 	body := []string{title}
 	padY, padX := 0, 1
 	if roomy {
 		blank := cardLine("", width, lipgloss.Left)
-		footer := cardLine(dimStyle.Background(panelBg).Render("? ou esc fecha"), width, lipgloss.Center)
+		footer := cardLine(dimStyle.Background(panelBg).Render("? or esc closes"), width, lipgloss.Center)
 		body = append(body, blank)
 		body = append(body, rows...)
 		body = append(body, blank, footer)

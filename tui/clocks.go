@@ -23,7 +23,7 @@ func (m *Model) askClocks(pg *chess.PGNGame, source string, back screen) {
 	var opts []clockOption
 	if _, _, remaining, ok := recordClocks(pg); ok {
 		opts = append(opts, clockOption{
-			label: "Relógios do PGN",
+			label: "PGN clocks",
 			right: formatClock(remaining[chess.White]) + " · " + formatClock(remaining[chess.Black]),
 			src:   clocksFromRecord,
 		})
@@ -73,8 +73,8 @@ func (m *Model) clocksLines() []string {
 	c := &m.clocks
 	pos := c.record.Game.Position()
 	lines := []string{
-		center(m.st.title.Render("Continuar a partida"), menuInnerW),
-		center(dimStyle.Render("lance "+strconv.Itoa(pos.FullmoveNumber())+", vez das "+strings.ToLower(colorName(pos.SideToMove()))), menuInnerW),
+		center(m.st.title.Render("Continue the game"), menuInnerW),
+		center(dimStyle.Render("move "+strconv.Itoa(pos.FullmoveNumber())+", "+colorName(pos.SideToMove())+" to move"), menuInnerW),
 		"",
 	}
 	for i, o := range c.options {
@@ -85,7 +85,7 @@ func (m *Model) clocksLines() []string {
 			lines = append(lines, textStyle.Render("  "+row+"  "))
 		}
 	}
-	return append(lines, "", m.helpLine([][2]string{{"enter", "jogar"}, {"esc", "voltar"}}))
+	return append(lines, "", m.helpLine([][2]string{{"enter", "play"}, {"esc", "back"}}))
 }
 
 // clocksView renders the time-control question.

@@ -13,10 +13,10 @@ var menuItems = []menuItem{
 	{"Bullet", "1+0"},
 	{"Blitz", "3+2"},
 	{"Blitz", "5+3"},
-	{"Rápida", "10+0"},
-	{"Rápida", "15+10"},
-	{"Sem relógio", "none"},
-	{"Personalizado…", ""},
+	{"Rapid", "10+0"},
+	{"Rapid", "15+10"},
+	{"No clock", "none"},
+	{"Custom…", ""},
 }
 
 const (
@@ -30,7 +30,7 @@ const (
 func (m *Model) menuEntries() []menuEntry {
 	var out []menuEntry
 	if m.resume != nil {
-		out = append(out, menuEntry{kind: entryResume, label: "Continuar", right: m.resume.label})
+		out = append(out, menuEntry{kind: entryResume, label: "Continue", right: m.resume.label})
 	}
 	for _, it := range menuItems {
 		e := menuEntry{kind: entryTime, label: it.label, tc: it.tc}
@@ -44,9 +44,9 @@ func (m *Model) menuEntries() []menuEntry {
 		out = append(out, e)
 	}
 	return append(out,
-		menuEntry{kind: entryTheme, label: "Tema", right: m.theme().Name + " ›"},
-		menuEntry{kind: entryFlip, label: "Girar tabuleiro", right: yesNo(m.flip)},
-		menuEntry{kind: entryOpen, label: "Abrir PGN", right: "›"},
+		menuEntry{kind: entryTheme, label: "Theme", right: m.theme().Name + " ›"},
+		menuEntry{kind: entryFlip, label: "Turn the board", right: yesNo(m.flip)},
+		menuEntry{kind: entryOpen, label: "Open PGN", right: "›"},
 	)
 }
 
@@ -56,20 +56,20 @@ func (m *Model) menuLines() (lines []string, entryLine []int) {
 	entries := m.menuEntries()
 	lines = append(lines,
 		center(m.st.title.Render("♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜"), menuInnerW),
-		center(m.st.title.Render("X  A  D  R  E  Z"), menuInnerW),
+		center(m.st.title.Render("T  C  H  E  S  S"), menuInnerW),
 		"",
 	)
 	for i, e := range entries {
 		switch {
 		case e.kind == entryResume:
-			lines = append(lines, dimStyle.Render("Partida salva"))
+			lines = append(lines, dimStyle.Render("Saved game"))
 		case e.kind == entryTime && (i == 0 || entries[i-1].kind == entryResume):
 			if i > 0 {
 				lines = append(lines, "")
 			}
-			lines = append(lines, dimStyle.Render("Controle de tempo"))
+			lines = append(lines, dimStyle.Render("Time control"))
 		case e.kind == entryTheme:
-			lines = append(lines, "", dimStyle.Render("Opções"))
+			lines = append(lines, "", dimStyle.Render("Options"))
 		}
 		entryLine = append(entryLine, len(lines))
 		row := menuRow(e.label, e.right)
@@ -106,9 +106,9 @@ func menuRow(label, right string) string {
 // menuHelp is the key hint line under the menu.
 func (m *Model) menuHelp() string {
 	if m.menu.editing {
-		return m.helpLine([][2]string{{"enter", "jogar"}, {"esc", "voltar"}})
+		return m.helpLine([][2]string{{"enter", "play"}, {"esc", "back"}})
 	}
-	return m.helpLine([][2]string{{"enter", "abrir"}, {"?", "ajuda"}, {"q", "sair"}})
+	return m.helpLine([][2]string{{"enter", "open"}, {"?", "help"}, {"q", "quit"}})
 }
 
 // menuView renders the menu, or the help card over it.
@@ -132,7 +132,7 @@ func (m *Model) menuKey(msg tea.KeyMsg) tea.Cmd {
 			tc, err := clock.Parse(ms.input)
 			if err != nil || ms.input == "" {
 				ms.editing = false
-				ms.err = "Formato: minutos+segundos, ex. 7+2"
+				ms.err = "Format: minutes+seconds, e.g. 7+2"
 				if err != nil {
 					ms.err = err.Error()
 				}

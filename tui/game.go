@@ -81,7 +81,7 @@ func (m *Model) play(mv chess.Move) tea.Cmd {
 		}
 	}
 	if err := m.game.Play(mv); err != nil {
-		m.notice = "Lance ilegal"
+		m.notice = "Illegal move"
 		return nil
 	}
 	now := m.now()

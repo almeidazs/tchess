@@ -13,13 +13,13 @@ import (
 func TestUndoNeedsConsent(t *testing.T) {
 	m := newGame(t, 140, 50, "none")
 	key(m, "u")
-	if m.mode != modePlay || !strings.Contains(m.notice, "Nenhum lance") {
+	if m.mode != modePlay || !strings.Contains(m.notice, "No move") {
 		t.Fatalf("undo before any move: mode %v notice %q", m.mode, m.notice)
 	}
 	click(m, chess.E2)
 	click(m, chess.E4)
 	key(m, "u")
-	if m.mode != modeUndoOffer || !strings.Contains(m.statusView(), "Brancas pedem para voltar o lance") {
+	if m.mode != modeUndoOffer || !strings.Contains(m.statusView(), "White asks to take back the last move") {
 		t.Fatalf("mode %v status %q", m.mode, m.statusView())
 	}
 	key(m, "n")
@@ -87,7 +87,7 @@ func TestUndoBackToReviewedPosition(t *testing.T) {
 	key(m, "]")
 	key(m, "]") // position after 1.e4 e5: White to move
 	key(m, "u")
-	if m.mode != modeUndoOffer || !strings.Contains(m.statusView(), "Brancas pedem para voltar 3 lances. Pretas, aceitam?") {
+	if m.mode != modeUndoOffer || !strings.Contains(m.statusView(), "White asks to take back 3 moves. Black, accept?") {
 		t.Fatalf("mode %v status %q", m.mode, m.statusView())
 	}
 	if !m.reviewing {
@@ -97,7 +97,7 @@ func TestUndoBackToReviewedPosition(t *testing.T) {
 	if m.game.Ply() != 2 || m.reviewing || m.game.Turn() != chess.White || len(m.moveTimes) != 2 {
 		t.Fatalf("after: ply %d reviewing %v times %v", m.game.Ply(), m.reviewing, m.moveTimes)
 	}
-	if !strings.Contains(m.notice, "3 lances voltados") {
+	if !strings.Contains(m.notice, "3 moves taken back") {
 		t.Fatalf("notice %q", m.notice)
 	}
 	// White's clock is back to what it showed at the moment of 2.Nf3 (4 s
@@ -122,7 +122,7 @@ func TestUndoBackToReviewedPosition(t *testing.T) {
 	}
 	key(m, "end")
 	key(m, "u") // live again: one half-move
-	if !strings.Contains(m.statusView(), "Pretas pedem para voltar o lance") {
+	if !strings.Contains(m.statusView(), "Black asks to take back the last move") {
 		t.Fatalf("status %q", m.statusView())
 	}
 }

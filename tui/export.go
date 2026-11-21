@@ -8,10 +8,10 @@ import (
 // finished game is already there.
 func (m *Model) exportGame() tea.Cmd {
 	if m.mode == modeGameOver && m.savedPath != "" {
-		m.notice = "A partida já está salva em " + tildePath(m.savedPath)
+		m.notice = "The game is already saved in " + tildePath(m.savedPath)
 		return nil
 	}
-	m.notice = "Salvando a partida…"
+	m.notice = "Saving the game…"
 	return m.files.export(m.gamePGN(), m.exportName())
 }
 
@@ -31,11 +31,11 @@ func (m *Model) exportName() string {
 // onExported reports where the game was saved.
 func (m *Model) onExported(msg exportedMsg) {
 	if msg.err != nil {
-		m.say("Não foi possível salvar a partida: " + msg.err.Error())
+		m.say("Could not save the game: " + msg.err.Error())
 		return
 	}
 	if m.screen == screenGame && m.mode == modeGameOver {
 		m.savedPath = msg.path
 	}
-	m.say("Partida salva em " + tildePath(msg.path))
+	m.say("Game saved in " + tildePath(msg.path))
 }

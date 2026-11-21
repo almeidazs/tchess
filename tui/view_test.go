@@ -15,14 +15,14 @@ import (
 
 func TestViewRenders(t *testing.T) {
 	small := newGame(t, 40, 10, "5+3")
-	if !strings.Contains(ansi.Strip(small.View()), "Terminal pequeno") {
+	if !strings.Contains(ansi.Strip(small.View()), "Terminal too small") {
 		t.Error("tiny terminal should show a size warning")
 	}
 	for _, size := range [][2]int{{140, 45}, {80, 24}, {58, 14}} {
 		m := newGame(t, size[0], size[1], "5+3")
 		click(m, chess.E2)
 		out := ansi.Strip(m.View())
-		if !strings.Contains(out, "Brancas") || !strings.Contains(out, "5:00") {
+		if !strings.Contains(out, "White") || !strings.Contains(out, "5:00") {
 			t.Errorf("%v: view missing pieces of UI:\n%s", size, out)
 		}
 		if testing.Verbose() {
@@ -38,7 +38,7 @@ func TestGameOverOverlay(t *testing.T) {
 		click(m, mv[1])
 	}
 	out := ansi.Strip(m.View())
-	if m.mode != modeGameOver || !strings.Contains(out, "Pretas vencem") || !strings.Contains(out, "xeque-mate") {
+	if m.mode != modeGameOver || !strings.Contains(out, "Black wins") || !strings.Contains(out, "checkmate") {
 		t.Fatalf("game over view:\n%s", out)
 	}
 	if testing.Verbose() {

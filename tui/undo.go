@@ -21,7 +21,7 @@ import (
 func (m *Model) requestUndo(target int) {
 	m.notice = ""
 	if m.game.Ply() == 0 || target >= m.game.Ply() {
-		m.notice = "Nenhum lance para voltar"
+		m.notice = "No move to take back"
 		return
 	}
 	m.clearSelection()
@@ -39,11 +39,11 @@ func (m *Model) undoRequester() chess.Color {
 func (m *Model) undoStatus() string {
 	who := m.undoRequester()
 	n := m.game.Ply() - m.undoTarget
-	what := "voltar o lance"
+	what := "the last move"
 	if n > 1 {
-		what = fmt.Sprintf("voltar %d lances", n)
+		what = fmt.Sprintf("%d moves", n)
 	}
-	return "As " + colorName(who) + " pedem para " + what + ". " + colorName(who.Other()) + ", aceitam?  "
+	return colorName(who) + " asks to take back " + what + ". " + colorName(who.Other()) + ", accept?  "
 }
 
 // undo takes the game back after the opponent accepted.
@@ -78,9 +78,9 @@ func (m *Model) undo() tea.Cmd {
 	m.mode = modePlay
 	m.orientation = m.facing()
 	m.clearSelection()
-	m.notice = "Lance voltado"
+	m.notice = "Move taken back"
 	if taken > 1 {
-		m.notice = fmt.Sprintf("%d lances voltados", taken)
+		m.notice = fmt.Sprintf("%d moves taken back", taken)
 	}
 	return m.files.saveResume(m.gamePGN())
 }

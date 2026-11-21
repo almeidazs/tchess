@@ -20,7 +20,7 @@ import (
 // gamePGN renders the current game as PGN.
 func (m *Model) gamePGN() string {
 	tags := []chess.Tag{
-		{Name: "Event", Value: "Partida casual"},
+		{Name: "Event", Value: "Casual game"},
 		{Name: "Site", Value: "tchess"},
 		{Name: "Date", Value: m.now().Format("2006.01.02")},
 		{Name: "Round", Value: "-"},

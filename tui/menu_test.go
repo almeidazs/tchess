@@ -12,13 +12,15 @@ import (
 )
 
 func TestMenuRowKeepsAGap(t *testing.T) {
-	if got := menuRow("Continuar", "sem relógio · lance 3"); !strings.Contains(got, "Continuar  sem") {
+	width := menuInnerW - 4
+	exact := strings.Repeat("x", width-len("Continue")-2) // fills the line, gap included
+	if got := menuRow("Continue", exact); got != "Continue  "+exact {
 		t.Fatalf("label and detail run together: %q", got)
 	}
-	if got := menuRow("Continuar", "sem relógio · lance 123"); lipgloss.Width(got) != menuInnerW-4 || !strings.HasSuffix(got, "…") {
+	if got := menuRow("Continue", exact+"y"); lipgloss.Width(got) != width || !strings.HasSuffix(got, "…") || !strings.HasPrefix(got, "Continue  ") {
 		t.Fatalf("a long detail should be cut to fit: %q", got)
 	}
-	if got := menuRow("Tema", "Madeira ›"); lipgloss.Width(got) != menuInnerW-4 || !strings.HasSuffix(got, "Madeira ›") {
+	if got := menuRow("Theme", "Wood ›"); lipgloss.Width(got) != menuInnerW-4 || !strings.HasSuffix(got, "Wood ›") {
 		t.Fatalf("short rows are right-aligned: %q", got)
 	}
 }

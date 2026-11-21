@@ -66,7 +66,7 @@ func (m *Model) keepTheme() tea.Cmd {
 	m.setTheme(m.themes.cursor)
 	m.screen = screenMenu
 	m.cfg.Theme = m.theme().Name
-	m.menu.notice = "Tema: " + m.theme().Name
+	m.menu.notice = "Theme: " + m.theme().Name
 	return m.saver.save(m.cfg)
 }
 
@@ -103,7 +103,7 @@ func (m *Model) themesLines() []string {
 	gap := strings.Repeat(" ", gapW)
 	width := themeListW + gapW + 8*l.cellW
 
-	lines := []string{center(m.st.title.Render("Tema"), width), ""}
+	lines := []string{center(m.st.title.Render("Theme"), width), ""}
 	for row, b := range board {
 		name := ""
 		if row < len(themes) {
@@ -115,7 +115,7 @@ func (m *Model) themesLines() []string {
 		}
 		lines = append(lines, pad(name, themeListW)+gap+b)
 	}
-	return append(lines, "", m.helpLine([][2]string{{"↑↓", "escolher"}, {"enter", "usar"}, {"esc", "voltar"}}))
+	return append(lines, "", m.helpLine([][2]string{{"↑↓", "choose"}, {"enter", "use"}, {"esc", "back"}}))
 }
 
 // themesView renders the theme picker.

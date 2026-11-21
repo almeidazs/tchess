@@ -27,11 +27,11 @@ func TestReviewKeys(t *testing.T) {
 	if bs := m.boardState(l); bs.pos != m.game.PositionAt(3) || bs.last.UCI() != "g1f3" {
 		t.Fatalf("board shows %s, last %v", bs.pos.FEN(), bs.last)
 	}
-	if !strings.Contains(m.statusView(), "2.Nf3") || !strings.Contains(m.statusView(), "3 de 4") {
+	if !strings.Contains(m.statusView(), "2.Nf3") || !strings.Contains(m.statusView(), "3 of 4") {
 		t.Fatalf("status %q", m.statusView())
 	}
 	key(m, "home")
-	if m.reviewPly != 0 || !strings.Contains(m.statusView(), "posição inicial") {
+	if m.reviewPly != 0 || !strings.Contains(m.statusView(), "starting position") {
 		t.Fatalf("home: ply %d", m.reviewPly)
 	}
 	key(m, "[") // already at the start
@@ -89,7 +89,7 @@ func TestReviewAfterGameOver(t *testing.T) {
 		click(m, sq)
 	}
 	key(m, "[")
-	if !m.reviewing || strings.Contains(m.View(), "nova partida  ·  q sair\n") {
+	if !m.reviewing || strings.Contains(m.View(), "new game  ·  q quit\n") {
 		t.Fatal("the result card should step aside while reviewing")
 	}
 	key(m, "esc")
