@@ -18,6 +18,8 @@ First release.
 - Review of any earlier position, from the move list or with `[` and `]`.
 - PGN: finished games saved automatically, export with `[%clk]` and `[%emt]`, import of files with one or several games, and a choice of time control to continue an unfinished game.
 - Resuming an interrupted game, with the clocks as they were.
+- Playing the computer through any UCI engine such as Stockfish, at six levels (Beginner to Max) or a chosen Elo, with the real clock, hints, take-backs and draw offers it answers by its evaluation.
+- An evaluation bar while reviewing and after the game, when an engine is available.
 - Preferences in `~/.tchess/config.toml`.
 - deb, rpm, apk and Arch packages and a Docker image at `ghcr.io/almeidazs/tchess`.
 

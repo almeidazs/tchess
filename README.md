@@ -2,7 +2,7 @@
 
 # ♞ TChess
 
-Two-player chess in the terminal, written in Go.<br>
+Chess in the terminal, written in Go: two players on one keyboard or you against Stockfish.<br>
 The pieces are pixel art, you can drag them with the mouse, the board turns to face whoever moves next<br>
 and every FIDE rule applies, from en passant to the 75-move rule.
 
@@ -32,6 +32,7 @@ and every FIDE rule applies, from en passant to the 75-move rule.
 - You can take back moves if the opponent agrees, and review any earlier position with `[` and `]` or by clicking the move list, without stopping the clock.
 - The game in progress is saved on its own. If you close the terminal, the menu offers to continue where you left off, with the clocks as they were.
 - Every finished game is saved as PGN, with the time of each move in the `[%clk]` and `[%emt]` comments Lichess reads. You can open any of them again from the menu, or import a PGN from another program.
+- Play the computer through any UCI engine, such as Stockfish, from Beginner (~800) to full strength or at an Elo you pick, with hints and take-backs. When you review a game, the engine shows an evaluation bar.
 - Six board themes, picked in the menu with a preview of the board or switched with `s` during a game. Sounds for moves, captures, check, castling, promotion and the end of the game, and a help card with every shortcut on `?`. All of it is remembered for next time.
 - Underneath is a bitboard engine that generates moves without allocating memory and goes past 160 million positions per second in perft.
 
@@ -64,6 +65,12 @@ sudo apk add --allow-untrusted ./tchess_*.apk   # Alpine
 sudo pacman -U ./tchess-*.pkg.tar.zst           # Arch
 ```
 
+To play the computer, also install a UCI engine. tchess looks for Stockfish on its own:
+
+```sh
+sudo apt install stockfish    # Debian, Ubuntu (dnf on Fedora, brew on macOS)
+```
+
 To build from source:
 
 ```sh
@@ -81,6 +88,9 @@ tchess                  # open the menu
 tchess --time 5+3       # start right away: 5 minutes + 3 seconds per move
 tchess --time none      # no clock
 tchess --pgn game.pgn   # open a game from a PGN file
+tchess --computer hard  # play the computer (a level or an Elo, e.g. 1750)
+tchess --color black    # your side against the computer (white, black, random)
+tchess --engine /path   # use another UCI engine
 tchess --theme Ocean    # another theme for this run only
 tchess --no-sound       # no sound for this run only
 tchess perft 6          # move generator self-test
@@ -96,6 +106,7 @@ tchess --version
 | Ask to take back a move | | `u` (the opponent answers `y` or `n`); while reviewing, back to the position shown |
 | Review earlier moves | click a move in the move list | `[` and `]` (at the end of a game, also `←` and `→`), `home` and `end`, `esc` goes back |
 | Hide or show the result | | `esc` at the end of a game |
+| Ask the computer for a hint | | `t` |
 | Export the game as PGN | | `e` |
 | Offer or claim a draw | | `d` |
 | Resign | | `r` |
@@ -122,15 +133,41 @@ The size of the pieces depends on the terminal:
 | 90×30 or larger | 7×6 pixels |
 | 58×14 or larger | one Unicode character per square |
 
+### Playing the computer
+
+The first entry in the menu is the opponent. Choosing "Computer" asks for the level and your color:
+
+| Level | Strength |
+| --- | --- |
+| Beginner | about 800 |
+| Easy | about 1200 |
+| Medium | about 1600 |
+| Hard | about 2000 |
+| Expert | about 2400 |
+| Max | the engine's full strength |
+| Custom Elo… | any Elo from 400 to 3500 |
+
+tchess talks to the engine through UCI, so any UCI engine works; it looks for `stockfish` on the PATH (and in `/usr/games`, where Debian puts it). With Stockfish, levels from 1320 Elo up use its own `UCI_Elo` setting, and the weaker ones use `Skill Level` with a shallow search. Without an engine, the menu explains how to install one and the rest of the game works as usual.
+
+The computer plays with the real clock: it gets both clocks and the increment and manages its own time, while the lower levels also answer within a short thinking time. Without a clock, each level thinks for a fixed time per move. The board stays on your side.
+
+Against the computer, `u` takes back your last move and its reply right away, and `t` highlights the engine's best move. Games where you used either are marked in the PGN. When you offer a draw, the computer takes a quick look and accepts if it isn't better; it never offers a draw or resigns itself. A game against the computer can be resumed like any other, against the same level.
+
+With an engine available, reviewing any game (against the computer, between two people or opened from a PGN) and the end of a game show an evaluation bar next to the board and the score (`+1.2`, `M3`) in the status bar. While a game is being played, the evaluation stays hidden.
+
 ### Preferences
 
-The theme, sound, board rotation and the last time control you played are kept in `~/.tchess/config.toml`, which the game writes whenever something changes. The menu opens on the last time control. The `--theme` and `--no-sound` flags only apply to that run and don't change the file.
+The theme, sound, board rotation, the opponent and the last time control you played are kept in `~/.tchess/config.toml`, which the game writes whenever something changes. The menu opens on the last time control. The `--theme`, `--no-sound`, `--computer`, `--color` and `--engine` flags only apply to that run and don't change the file.
 
 ```toml
 theme = "Forest"
 sound = true
 flip = true
 time_control = "5+3"
+engine = ""            # empty: Stockfish from the PATH
+opponent = "computer"  # or "human"
+computer_elo = 1600    # 0: full strength
+human_color = "white"  # or "black", "random"
 ```
 
 The themes are Wood, Forest, Ocean, Graphite, Coral and Marble. The sounds are generated by the program itself and played by the system's audio player: `pw-play`, `paplay` or `aplay` on Linux, `afplay` on macOS and PowerShell on Windows. The WAV files live in `~/.tchess/sounds/`. Without any of those players, the game runs silently.
@@ -156,7 +193,11 @@ flowchart LR
         model --> cursor["cursor.go<br/>arrow navigation"]
         model --> input["moveinput.go<br/>typed moves"]
         model --> record["record.go · files.go<br/>PGN, resume, export"]
+        model --> computer["computer.go · engine.go<br/>opponent, hints, analysis"]
     end
+
+    computer --> uci["uci/<br/>UCI protocol · engine process"]
+    uci --> stockfish(["Stockfish or any<br/>UCI engine"])
 
     subgraph internal["internal/"]
         config["config/<br/>~/.tchess/config.toml"]
@@ -177,7 +218,7 @@ flowchart LR
     config --> atomic
 ```
 
-The `chess` package is the rules engine, `clock` is the clock and `tui` is the interface. The interface uses the engine through a small API (`Game.Play`, `Game.Undo`, `Game.PositionAt`, `Game.PGN`, `ParsePGN` and a few others). The engine only returns enums; every piece of text on screen lives in the interface.
+The `chess` package is the rules engine, `clock` is the clock, `uci` talks to an external engine and `tui` is the interface. The interface uses the engine through a small API (`Game.Play`, `Game.Undo`, `Game.PositionAt`, `Game.PGN`, `ParsePGN` and a few others). The engine only returns enums; every piece of text on screen lives in the interface.
 
 <details>
 <summary><b>The engine: bitboards and legal moves</b></summary>
@@ -256,6 +297,19 @@ The clock (`clock/`) implements the Fischer increment and receives its time sour
 </details>
 
 <details>
+<summary><b>Talking to the engine</b></summary>
+
+<br>
+
+The `uci` package starts the engine as a process and speaks UCI over its standard input and output: the `uci`/`uciok` handshake, where the engine names itself and lists its options, `setoption` to set the strength, and `position` plus `go` for each search, reading the `info` lines (depth, score, principal variation) until `bestmove`. A search can be stopped at any moment with `stop`.
+
+In the interface, every search runs in the background and starts by canceling the previous one: the computer's move, a hint, a draw decision or the evaluation of a reviewed position. Each result carries the number of its search, so an answer that arrives after the position changed (a take-back, a new game) is recognized and dropped. The engine process starts the first time it's needed and ends with the program.
+
+The tests drive a fake engine written in Go (`uci/ucitest`): the test binary runs itself as the engine, so the protocol and the whole game against the computer are tested without Stockfish installed.
+
+</details>
+
+<details>
 <summary><b>Sound without cgo</b></summary>
 
 <br>
@@ -283,7 +337,7 @@ The move generator is checked with perft, which counts every position reachable 
 
 <sub>¹ Intel Core i7-13620H, Go 1.27, one thread. Reproduce with <code>make bench</code> and <code>make perft</code>.</sub>
 
-The tests also cover each rule on its own (en passant, castling, pins, promotion, SAN, PGN, take-backs and draws), the clock and the interface, with clicks and drags on the turned board, keyboard navigation, promotion, animations and drawing at every screen size. Typed moves, take-backs with their clocks, review, exporting, importing and resuming games, the theme and PGN pickers, the config and the choice of each sound are tested too, writing to a temporary folder and never playing real audio.
+The tests also cover each rule on its own (en passant, castling, pins, promotion, SAN, PGN, take-backs and draws), the clock and the interface, with clicks and drags on the turned board, keyboard navigation, promotion, animations and drawing at every screen size. Typed moves, take-backs with their clocks, review, exporting, importing and resuming games, the theme and PGN pickers, the config and the choice of each sound are tested too, writing to a temporary folder and never playing real audio. So is the game against the computer, against a fake UCI engine: its moves, levels, hints, draw offers, take-backs, resuming and the evaluation.
 
 ## Development
 
@@ -326,6 +380,8 @@ The images in this README come from [`tools/shot`](tools/shot). It drives the re
 │   ├── outcome.go         Outcome and Termination · errors.go
 │   └── perft.go           node counting
 ├── clock/                 TimeControl (timecontrol.go) and Clock (clock.go)
+├── uci/                   UCI engine process and protocol (engine.go) · find.go: locating Stockfish
+│   └── ucitest/           fake engine for tests
 ├── internal/
 │   ├── pixel/             generic ▀ half-block framebuffer
 │   ├── atomicfile/        atomic writes (temporary file + rename)
@@ -348,7 +404,11 @@ The images in this README come from [`tools/shot`](tools/shot). It drives the re
 │   ├── menu.go            menu: continue, time controls and options
 │   ├── themes.go          theme picker with a board preview
 │   ├── openpgn.go         PGN file picker and the list of a file's games
-│   └── clocks.go          time control for continuing an imported game
+│   ├── clocks.go          time control for continuing an imported game
+│   ├── computer.go        the computer opponent, hints, draw offers, evaluation
+│   ├── engine.go          background searches · strength.go: levels and UCI options
+│   ├── opponents.go       opponent, level and color picker
+│   └── evalbar.go         evaluation bar
 ├── cmd/tchess/            the binary (main.go, perft.go)
 ├── tools/shot/            README image generator (separate module)
 └── assets/                generated screenshot and GIF
