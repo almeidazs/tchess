@@ -5,6 +5,8 @@
 //	tchess --theme Ocean    use a board theme for this run
 //	tchess --no-sound       play without sound for this run
 //	tchess --pgn game.pgn   open a game from a PGN file
+//	tchess --computer hard  play the computer (needs a UCI engine such as Stockfish)
+//	tchess --color black    your side against the computer
 //	tchess perft 5 [fen]    count move-tree nodes (move generator self-test)
 //	tchess --version        print the version
 //
@@ -15,6 +17,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -28,6 +31,7 @@ import (
 	"github.com/almeidazs/tchess/internal/config"
 	"github.com/almeidazs/tchess/internal/sound"
 	"github.com/almeidazs/tchess/tui"
+	"github.com/almeidazs/tchess/uci"
 )
 
 // version is set at build time: -ldflags "-X main.version=v1.2.3".
@@ -46,6 +50,9 @@ func main() {
 	themeFlag := flag.String("theme", "", "board theme for this run: "+strings.Join(tui.ThemeNames(), ", "))
 	noSound := flag.Bool("no-sound", false, "play without sound this run")
 	pgnFlag := flag.String("pgn", "", "open a game from a PGN file")
+	engineFlag := flag.String("engine", "", "UCI engine to play against (default: stockfish from the PATH)")
+	computerFlag := flag.String("computer", "", "play the computer: beginner, easy, medium, hard, expert, max or an Elo")
+	colorFlag := flag.String("color", "", "your side against the computer: white, black or random")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
 	if *showVersion {
@@ -63,6 +70,18 @@ func main() {
 	}
 	if *themeFlag != "" && !tui.HasTheme(*themeFlag) {
 		fail(fmt.Errorf("unknown theme %q (options: %s)", *themeFlag, strings.Join(tui.ThemeNames(), ", ")))
+	}
+	if *computerFlag != "" {
+		if _, ok := tui.ParseLevel(*computerFlag); !ok {
+			fail(fmt.Errorf("unknown computer level %q (beginner, easy, medium, hard, expert, max or an Elo)", *computerFlag))
+		}
+		opts.Computer = *computerFlag
+	}
+	switch *colorFlag {
+	case "", "white", "black", "random":
+		opts.Color = *colorFlag
+	default:
+		fail(fmt.Errorf("unknown color %q (white, black or random)", *colorFlag))
 	}
 	if *pgnFlag != "" {
 		data, err := os.ReadFile(*pgnFlag)
@@ -94,8 +113,32 @@ func main() {
 		opts.ResumePath = filepath.Join(dir, "current.pgn")
 	}
 
-	p := tea.NewProgram(tui.New(opts), tea.WithAltScreen(), tea.WithMouseCellMotion())
-	if _, err := p.Run(); err != nil {
+	engine := opts.Config.Engine
+	if *engineFlag != "" {
+		engine = *engineFlag
+	}
+	if rest, ok := strings.CutPrefix(engine, "~/"); ok { // the config is not read by a shell
+		if home, err := os.UserHomeDir(); err == nil {
+			engine = filepath.Join(home, rest)
+		}
+	}
+	switch path, err := uci.Find(engine); {
+	case err == nil:
+		opts.EnginePath = path
+	case *engineFlag != "":
+		fail(fmt.Errorf("engine %q not found", *engineFlag))
+	case engine != "":
+		fmt.Fprintf(os.Stderr, "warning: engine %q from the config not found\n", engine)
+	}
+	if opts.Computer != "" && opts.EnginePath == "" {
+		fail(errors.New("--computer needs a UCI engine: install stockfish or pass --engine"))
+	}
+
+	model := tui.New(opts)
+	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	_, err := p.Run()
+	model.Close() // ends the engine process
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
