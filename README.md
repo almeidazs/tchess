@@ -49,7 +49,20 @@ Com Go 1.27 ou mais recente:
 go install github.com/almeidazs/tchess/cmd/tchess@latest
 ```
 
-Há binários para Linux, macOS e Windows (amd64 e arm64) na página de [releases](https://github.com/almeidazs/tchess/releases).
+Com Docker, sem instalar nada (o volume guarda as preferências e as partidas):
+
+```sh
+docker run --rm -it -v tchess:/root/.tchess ghcr.io/almeidazs/tchess
+```
+
+A página de [releases](https://github.com/almeidazs/tchess/releases) tem binários para Linux, macOS e Windows (amd64 e arm64) e pacotes `.deb`, `.rpm`, `.apk` e `.pkg.tar.zst`:
+
+```sh
+sudo apt install ./tchess_*_amd64.deb       # Debian, Ubuntu
+sudo dnf install ./tchess-*.x86_64.rpm      # Fedora
+sudo apk add --allow-untrusted ./tchess_*.apk   # Alpine
+sudo pacman -U ./tchess-*.pkg.tar.zst       # Arch
+```
 
 Para compilar a partir do código:
 
@@ -80,7 +93,7 @@ tchess --version
 | Digitar o lance | | `:`, o lance e `enter` |
 | Cancelar a seleção | clicar fora ou na mesma peça | `esc` |
 | Escolher a promoção | clicar na peça do seletor | `↑↓` e `enter`, ou `q` `r` `b` `n` |
-| Pedir para voltar o lance | | `u` (o adversário responde `y` ou `n`) |
+| Pedir para voltar o lance | | `u` (o adversário responde `y` ou `n`); na revisão, volta até a posição mostrada |
 | Rever lances anteriores | clicar no lance do histórico | `[` e `]` (no fim da partida, também `←` e `→`), `home` e `end`, `esc` volta |
 | Esconder ou mostrar o resultado | | `esc` no fim da partida |
 | Exportar a partida em PGN | | `e` |
@@ -96,7 +109,7 @@ Quando a posição permite reivindicar empate por repetição tripla ou pela reg
 
 O menu tem os controles de tempo e, embaixo, as opções: o tema (abre a lista com uma prévia do tabuleiro em cada um), o giro do tabuleiro e "Abrir PGN". Quando há uma partida interrompida, o primeiro item é "Continuar".
 
-Quem pede para voltar o lance é quem acabou de jogar, e o adversário decide. O relógio de quem pediu volta ao que marcava no momento do lance, sem o incremento que ganhou com ele, e o do adversário volta ao que marcava antes de começar a correr. Na revisão o tabuleiro mostra a posição escolhida, o relógio continua correndo e só dá para jogar de novo depois de voltar ao presente.
+Quem pede para voltar o lance é quem acabou de jogar, e o adversário decide. Para voltar mais, é só ir até a posição desejada na revisão e apertar `u`: o pedido é para voltar a partida até ali, feito por quem joga naquela posição. O relógio de quem pediu volta ao que marcava no momento do lance, sem o incremento que ganhou com ele, e o do adversário volta ao que marcava antes de começar a correr. Na revisão o tabuleiro mostra a posição escolhida, o relógio continua correndo e só dá para jogar de novo depois de voltar ao presente.
 
 O campo do `:` aceita o lance escrito de vários jeitos: `Nf3`, `nf3`, `Ngf3`, `g1f3` ou `g1-f3`, roque como `O-O` ou `0-0`, captura com ou sem `x` e promoção como `e8=Q`, `e8Q` ou `e7e8q`. Sinais como `+`, `#`, `!` e `?` são ignorados. Se o texto serve para dois lances (`Nd2` com os dois cavalos podendo ir), o jogo pede para desfazer a ambiguidade. Escrever só `e8` abre o seletor de promoção. Em `bc3` com letra minúscula, que pode ser peão ou bispo, vale o peão, como na maioria dos aplicativos.
 
@@ -124,9 +137,11 @@ Os temas são Madeira, Floresta, Oceano, Grafite, Coral e Mármore. Os sons são
 
 ### Partidas salvas e PGN
 
-A partida em andamento é gravada em `~/.tchess/current.pgn` a cada lance, para poder ser retomada. Ao continuar, o relógio fica parado até o próximo lance. Começar outra partida descarta essa.
+A partida em andamento é gravada em `~/.tchess/current.pgn` a cada lance, para poder ser retomada. Ao continuar, o relógio de quem está na vez volta a correr na hora. Começar outra partida descarta essa.
 
-Toda partida que termina (mate, desistência, empate ou tempo) vai sozinha para `~/.tchess/games/`, num arquivo com a data e a hora, e sai do `current.pgn`. No meio do jogo, `e` salva uma cópia na mesma pasta. Cada lance leva o relógio depois dele (`[%clk 0:04:58.0]`) e o tempo gasto (`[%emt 0:00:04.2]`), então o arquivo pode ser importado direto no Lichess. "Abrir PGN", no menu, lista essa pasta e aceita qualquer outro caminho; `--pgn` faz o mesmo pela linha de comando. A leitura aceita o que outros programas escrevem: comentários, variantes (que são ignoradas), NAGs, posição inicial por FEN e lances em SAN ou em coordenadas. Uma partida terminada abre na posição final, com o resultado e o motivo na barra de status, e as setas passam pelos lances. Uma inacabada continua de onde parou, sem relógio.
+Toda partida que termina (mate, desistência, empate ou tempo) vai sozinha para `~/.tchess/games/`, num arquivo com a data e a hora, e sai do `current.pgn`. No meio do jogo, `e` salva uma cópia na mesma pasta. Cada lance leva o relógio depois dele (`[%clk 0:04:58.0]`) e o tempo gasto (`[%emt 0:00:04.2]`), então o arquivo pode ser importado direto no Lichess. "Abrir PGN", no menu, lista essa pasta e aceita qualquer outro caminho; `--pgn` faz o mesmo pela linha de comando. Um arquivo com várias partidas, como uma exportação do Lichess ou um torneio, mostra a lista delas com os jogadores, o resultado e o número de lances, e as que não puderem ser lidas são puladas com um aviso. A leitura aceita o que outros programas escrevem: comentários, variantes (que são ignoradas), NAGs, posição inicial por FEN e lances em SAN ou em coordenadas.
+
+Uma partida terminada abre na posição final, com o resultado e o motivo na barra de status, e as setas passam pelos lances. Uma inacabada pergunta antes como continuar: com os relógios do próprio PGN, quando ele traz `[%clk]`, com um dos ritmos do menu (os dois relógios cheios) ou sem relógio.
 
 ## Como funciona
 
@@ -287,6 +302,8 @@ Os testes também cobrem cada regra separadamente (en passant, roque, cravadas, 
 | `make assets` | gera de novo o print e o GIF deste README |
 | `make snapshot` | gera os pacotes de release localmente com [GoReleaser](https://goreleaser.com) |
 
+As versões saem com `git tag vX.Y.Z && git push --tags`: o GoReleaser gera os binários, os pacotes e a imagem Docker. O que muda em cada uma fica no [CHANGELOG](CHANGELOG.md). Falhas de segurança devem ser relatadas como explica o [SECURITY](SECURITY.md), e a convivência no projeto segue o [código de conduta](CODE_OF_CONDUCT.md).
+
 As imagens deste README saem de [`tools/shot`](tools/shot). Ele controla a interface de verdade (teclas, cliques e arrastos) com um relógio falso e transforma a saída ANSI de cada quadro em imagem, então print e GIF sempre batem com o código.
 
 ```
@@ -330,7 +347,8 @@ As imagens deste README saem de [`tools/shot`](tools/shot). Ele controla a inter
 │   ├── theme.go           os seis temas e os estilos · glyphs.go · text.go (textos em português)
 │   ├── menu.go            menu: continuar, controles de tempo e opções
 │   ├── themes.go          seletor de tema com prévia do tabuleiro
-│   └── openpgn.go         seletor de arquivos PGN
+│   ├── openpgn.go         seletor de arquivos PGN e lista das partidas de um arquivo
+│   └── clocks.go          escolha do ritmo para continuar uma partida importada
 ├── cmd/tchess/            binário (main.go, perft.go)
 ├── tools/shot/            gerador das imagens do README (módulo separado)
 └── assets/                print e GIF gerados
