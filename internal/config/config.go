@@ -65,7 +65,7 @@ func Load(path string) (Config, error) {
 // replaced atomically, so a crash never leaves it half written.
 func Save(path string, cfg Config) error {
 	var buf bytes.Buffer
-	buf.WriteString("# Preferências do tchess. O jogo atualiza este arquivo sozinho.\n\n")
+	buf.WriteString("# tchess preferences. The game keeps this file up to date.\n\n")
 	if err := toml.NewEncoder(&buf).Encode(cfg); err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
