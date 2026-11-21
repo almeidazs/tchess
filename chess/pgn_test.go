@@ -12,7 +12,7 @@ func TestPGNRoundTrip(t *testing.T) {
 	comments := make([]string, g.Ply())
 	comments[0] = "[%clk 0:05:00] best by test"
 	comments[5] = "a } brace"
-	tags := []Tag{{"Event", `Quote "here"`}, {"White", "Brancas"}, {"Black", "Pretas"}, {"Result", "?"}}
+	tags := []Tag{{"Event", `Quote "here"`}, {"White", "Alice"}, {"Black", "Bob"}, {"Result", "?"}}
 	text := g.PGN(tags, comments)
 
 	if !strings.Contains(text, `[Event "Quote \"here\""]`) || !strings.Contains(text, `[Result "*"]`) {
@@ -31,7 +31,7 @@ func TestPGNRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pg.Tag("Event") != `Quote "here"` || pg.Tag("White") != "Brancas" {
+	if pg.Tag("Event") != `Quote "here"` || pg.Tag("White") != "Alice" {
 		t.Fatalf("tags %v", pg.Tags)
 	}
 	got, want := pg.Game.History(), g.History()
