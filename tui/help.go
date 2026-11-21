@@ -30,7 +30,7 @@ func (m *Model) helpEntries() []helpEntry {
 			{"enter", "play or open", "open"},
 		}, prefs...)
 	}
-	return append([]helpEntry{
+	game := []helpEntry{
 		{"mouse", "click or drag a piece", "drag"},
 		{"←↑↓→  hjkl", "move the cursor", "cursor"},
 		{"enter", "select and play", "play"},
@@ -41,7 +41,11 @@ func (m *Model) helpEntries() []helpEntry {
 		{"e", "export the game as PGN", "export"},
 		{"d", "offer or claim a draw", "draw"},
 		{"r", "resign", "resign"},
-	}, prefs...)
+	}
+	if m.vs.computer {
+		game = append(game, helpEntry{"t", "hint from the engine", "hint"})
+	}
+	return append(game, prefs...)
 }
 
 // helpBox renders the help card for a screen maxH rows tall: with spacing

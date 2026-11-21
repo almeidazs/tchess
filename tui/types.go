@@ -19,11 +19,12 @@ import (
 type screen uint8
 
 const (
-	screenMenu   screen = iota
-	screenGame          // the game itself
-	screenThemes        // theme picker with a board preview
-	screenOpen          // PGN file picker
-	screenClocks        // time control for an unfinished imported game
+	screenMenu     screen = iota
+	screenGame            // the game itself
+	screenThemes          // theme picker with a board preview
+	screenOpen            // PGN file picker
+	screenClocks          // time control for an unfinished imported game
+	screenOpponent        // opponent, computer level and color
 )
 
 // mode is the interaction state while on the game screen.
@@ -145,12 +146,13 @@ type menuItem struct {
 type entryKind uint8
 
 const (
-	entryResume entryKind = iota // continue the saved game
-	entryTime                    // start a game with a preset time control
-	entryCustom                  // type a time control
-	entryTheme                   // open the theme picker
-	entryFlip                    // toggle board turning
-	entryOpen                    // open a PGN file
+	entryResume   entryKind = iota // continue the saved game
+	entryTime                      // start a game with a preset time control
+	entryCustom                    // type a time control
+	entryTheme                     // open the theme picker
+	entryFlip                      // toggle board turning
+	entryOpen                      // open a PGN file
+	entryOpponent                  // choose human or computer
 )
 
 // menuEntry is one selectable line of the menu.
@@ -169,6 +171,17 @@ type menuState struct {
 	err     string
 	notice  string // feedback for the theme and sound keys
 	custom  string // last custom time control, offered again when editing
+}
+
+// opponentPicker is the opponent screen's state: who to play, then the
+// computer's level and the human's color.
+type opponentPicker struct {
+	step    int // 0: opponent, 1: level, 2: color
+	cursor  int
+	choice  opponentChoice // being edited
+	editing bool           // typing a custom Elo
+	input   string
+	err     string
 }
 
 // themePicker is the theme screen's state.

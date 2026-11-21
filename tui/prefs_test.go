@@ -177,8 +177,8 @@ func TestSaveErrorIsShown(t *testing.T) {
 
 func TestMenuRemembersTimeControl(t *testing.T) {
 	m, rec, _ := newPrefsModel(t, Options{Config: config.Config{TimeControl: "5+3", Sound: true}})
-	if menuItems[m.menu.cursor].tc != "5+3" {
-		t.Fatalf("cursor on %v", menuItems[m.menu.cursor])
+	if m.menuEntries()[m.menu.cursor].tc != "5+3" {
+		t.Fatalf("cursor on %v", m.menuEntries()[m.menu.cursor])
 	}
 	press(m, "down")
 	press(m, "enter")
@@ -187,8 +187,8 @@ func TestMenuRemembersTimeControl(t *testing.T) {
 	}
 
 	m, _, _ = newPrefsModel(t, Options{Config: config.Config{TimeControl: "7+2"}})
-	if menuItems[m.menu.cursor].tc != "" {
-		t.Fatalf("custom time control should select the custom item, got %v", menuItems[m.menu.cursor])
+	if m.menuEntries()[m.menu.cursor].kind != entryCustom {
+		t.Fatalf("custom time control should select the custom item, got %v", m.menuEntries()[m.menu.cursor])
 	}
 	press(m, "enter")
 	if !m.menu.editing || m.menu.input != "7+2" {
@@ -196,8 +196,8 @@ func TestMenuRemembersTimeControl(t *testing.T) {
 	}
 
 	m, rec, _ = newPrefsModel(t, Options{Config: config.Config{TimeControl: "none"}})
-	if menuItems[m.menu.cursor].tc != "none" {
-		t.Fatalf("cursor on %v", menuItems[m.menu.cursor])
+	if m.menuEntries()[m.menu.cursor].tc != "none" {
+		t.Fatalf("cursor on %v", m.menuEntries()[m.menu.cursor])
 	}
 	press(m, "enter")
 	if len(rec.saved) != 0 {

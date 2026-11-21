@@ -52,7 +52,8 @@ func (m *Model) statusView() string {
 		return m.st.accent.Render("Quit the game?  ") + yn
 	case modeGameOver:
 		s := m.st.accent.Render(outcomeHeadline(m.game.Outcome())) +
-			dimStyle.Render(" · "+outcomeScore(m.game.Outcome())+" · "+terminationText(m.game.Termination()))
+			dimStyle.Render(" · "+outcomeScore(m.game.Outcome())+" · "+terminationText(m.game.Termination())) +
+			m.evalStatus()
 		if m.notice != "" {
 			s += dimStyle.Render("  · " + m.notice)
 		}
@@ -60,6 +61,12 @@ func (m *Model) statusView() string {
 	}
 
 	s := m.st.accent.Render(turn) + textStyle.Render(" to move")
+	if m.vs.computer {
+		s = m.st.accent.Render("Your move")
+		if !m.humanTurn() {
+			s = m.st.accent.Render(m.computerName()) + textStyle.Render(" is thinking…")
+		}
+	}
 	if m.game.InCheck() {
 		s += dangerStyle.Render("  · Check!")
 	}
@@ -90,11 +97,23 @@ func (m *Model) reviewStatus() string {
 		}
 		s += textStyle.Render(num + m.game.History()[m.reviewPly-1].SAN)
 	}
-	s += dimStyle.Render(fmt.Sprintf("  (%d of %d)", m.reviewPly, m.game.Ply()))
+	s += dimStyle.Render(fmt.Sprintf("  (%d of %d)", m.reviewPly, m.game.Ply())) + m.evalStatus()
 	if m.notice != "" {
 		s += dimStyle.Render("  · " + m.notice)
 	}
 	return s
+}
+
+// evalStatus is the evaluation of the shown position for the status bar,
+// when it is visible.
+func (m *Model) evalStatus() string {
+	if !m.evalVisible() {
+		return ""
+	}
+	if e, ok := m.evals[m.shownPly()]; ok {
+		return dimStyle.Render("  · eval ") + textStyle.Render(e.text())
+	}
+	return dimStyle.Render("  · eval …")
 }
 
 // helpView lists the keys available in the current mode.
@@ -112,6 +131,10 @@ func (m *Model) helpView() string {
 	case modeInput:
 		return m.helpLine([][2]string{{"enter", "play"}, {"esc", "cancel"}})
 	case modePlay:
+		if m.vs.computer {
+			return m.helpLine([][2]string{{"←↑↓→ enter", "move"}, {":", "type"}, {"u", "take back"},
+				{"t", "hint"}, {"[ ]", "review"}, {"d", "draw"}, {"r", "resign"}, {"?", "help"}, {"q", "quit"}})
+		}
 		return m.helpLine([][2]string{{"←↑↓→ enter", "move"}, {":", "type"}, {"u", "take back"},
 			{"[ ]", "review"}, {"d", "draw"}, {"r", "resign"}, {"?", "help"}, {"q", "quit"}})
 	}

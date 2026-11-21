@@ -14,16 +14,21 @@ import (
 func (m *Model) startGame(tc clock.TimeControl) tea.Cmd {
 	m.screen = screenGame
 	m.game = chess.NewGame()
+	m.stopComputer()
+	m.notice = ""
+	m.vs = m.resolveOpponent()
+	m.engineGame++
+	m.resetAnalysis()
+	m.assistTakeback, m.assistHint = false, false
 	m.tc = tc
 	m.clock = nil
 	if !tc.Unlimited() {
 		m.clock = clock.New(tc, m.now)
 	}
-	m.orientation = chess.White
+	m.orientation = m.facing()
 	m.mode = modePlay
 	m.cursorCol, m.cursorRow = 4, 6 // e2
 	m.showCursor = false
-	m.notice = ""
 	m.anim = nil
 	m.moveTimes = nil
 	m.turnStart = m.now()
@@ -39,11 +44,12 @@ func (m *Model) startGame(tc clock.TimeControl) tea.Cmd {
 	if m.clock != nil {
 		cmds = append(cmds, tick(m.tickGen))
 	}
-	return tea.Batch(cmds...)
+	return tea.Batch(append(cmds, m.maybeComputer())...)
 }
 
 // toMenu leaves the game for the time-control menu.
 func (m *Model) toMenu() {
+	m.stopComputer()
 	m.screen = screenMenu
 	m.anim = nil
 	m.game = nil
@@ -63,11 +69,15 @@ func (m *Model) play(mv chess.Move) tea.Cmd {
 	m.dropped = false
 	m.mode = modePlay
 	m.clearSelection()
+	m.hintSet = false
 
-	// The opponent's time starts once the board has finished turning.
+	// The opponent's time starts once the animation is over: the slide
+	// (skipped for a dropped piece) and the turn of the board, if it turns.
 	var delay time.Duration
 	if animated {
-		delay = flipDur
+		if m.flip && !m.vs.computer {
+			delay = flipDur
+		}
 		if !dropped {
 			delay += slideDur
 		}
@@ -99,10 +109,11 @@ func (m *Model) play(mv chess.Move) tea.Cmd {
 		m.sfx(moveEffect(mv, m.game.InCheck()))
 		save = m.files.saveResume(m.gamePGN())
 	}
+	next := m.maybeComputer()
 	if animated {
-		return tea.Batch(save, m.startAnimation(before, mv, prevOrient, m.orientation, dropped))
+		return tea.Batch(save, m.startAnimation(before, mv, prevOrient, m.orientation, dropped), next)
 	}
-	return save
+	return tea.Batch(save, next)
 }
 
 // orderPromotions sorts promotion candidates as the picker shows them: Q R B N.
@@ -147,6 +158,7 @@ func (m *Model) finish() tea.Cmd {
 	if m.clock != nil {
 		m.clock.Stop()
 	}
+	m.stopComputer()
 	m.mode = modeGameOver
 	m.reviewing = false
 	m.resultHidden = false

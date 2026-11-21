@@ -25,7 +25,7 @@ func (m *Model) panelView(l layout) string {
 // they have captured plus their material advantage.
 func (m *Model) clockView(c chess.Color, compact bool) string {
 	active := !m.game.IsOver() && m.game.Turn() == c
-	name := kingGlyph(c) + " " + colorName(c)
+	name := kingGlyph(c) + " " + m.playerLabel(c)
 	timeStr, low := "", false
 	if m.clock != nil {
 		rem := m.clock.Remaining(c)
@@ -43,6 +43,7 @@ func (m *Model) clockView(c chess.Color, compact bool) string {
 		timeStyle = dangerStyle
 	}
 	inner := panelW - 4
+	name = truncate(name, inner-lipgloss.Width(timeStr)-1) // a long engine name
 	content := nameStyle.Render(name) +
 		strings.Repeat(" ", max(inner-lipgloss.Width(name)-lipgloss.Width(timeStr), 1)) +
 		timeStyle.Render(timeStr) + "\n" +

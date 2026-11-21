@@ -20,6 +20,10 @@ func (m *Model) boardState(l layout) boardState {
 	if m.mode == modePromotion {
 		bs.pickCol, bs.pickRow0 = m.cellOf(m.promo[0].To())
 	}
+	if m.hintSet && m.hintPly == m.game.Ply() && !m.reviewing {
+		bs.marked |= m.hint.From().Bitboard()
+		bs.targets |= m.hint.To().Bitboard()
+	}
 	if m.mode == modeInput {
 		var targets chess.Bitboard
 		bs.marked, targets = m.inputMarks()

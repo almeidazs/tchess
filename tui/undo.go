@@ -58,6 +58,12 @@ func (m *Model) undo() tea.Cmd {
 		}
 	}
 	m.moveTimes = m.moveTimes[:min(len(m.moveTimes), target)]
+	for ply := range m.evals {
+		if ply > target {
+			delete(m.evals, ply)
+		}
+	}
+	m.hintSet = false
 	if j := target - m.clockFrom; m.clock != nil && j >= 0 && j < len(m.moveClocks) {
 		m.restoreClock(j, m.game.Turn())
 	} else if m.clock != nil {

@@ -10,6 +10,10 @@ import (
 // select one of our pieces, or clear the selection.
 func (m *Model) activate(sq chess.Square) tea.Cmd {
 	m.notice = ""
+	if !m.humanTurn() {
+		m.notice = "Wait for the computer's move"
+		return nil
+	}
 	if m.selected != chess.NoSquare {
 		var cands []chess.Move
 		for _, mv := range m.targets {

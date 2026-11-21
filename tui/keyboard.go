@@ -22,6 +22,9 @@ func (m *Model) gameKey(key string) tea.Cmd {
 			return cmd
 		}
 		if m.reviewing && key == "u" && m.mode == modePlay {
+			if m.vs.computer {
+				return m.computerUndo(m.reviewPly)
+			}
 			m.requestUndo(m.reviewPly) // take the game back to the position shown
 			return nil
 		}
@@ -120,6 +123,10 @@ func (m *Model) gameOverKey(key string) tea.Cmd {
 func (m *Model) playKey(key string) tea.Cmd {
 	switch key {
 	case ":":
+		if !m.humanTurn() {
+			m.notice = "Wait for the computer's move"
+			return nil
+		}
 		m.openInput()
 	case "up", "k":
 		m.moveCursor(0, -1)
@@ -138,11 +145,23 @@ func (m *Model) playKey(key string) tea.Cmd {
 	case "esc":
 		m.clearSelection()
 	case "u":
+		if m.vs.computer {
+			return m.undoAgainstComputer()
+		}
 		m.requestUndo(m.game.Ply() - 1)
+	case "t":
+		return m.requestHint()
 	case "d":
 		m.notice = ""
 		if m.game.ClaimableDraw() != chess.NoTermination {
 			return m.conclude(m.game.ClaimDraw())
+		}
+		if m.vs.computer {
+			if !m.humanTurn() {
+				m.notice = "Offer a draw on your turn"
+				return nil
+			}
+			return m.offerDrawToComputer()
 		}
 		m.mode = modeDrawOffer
 	case "r":

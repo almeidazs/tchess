@@ -97,6 +97,9 @@ func (m *Model) toggleFlip() tea.Cmd {
 // facing is the side the board shows at the bottom: the side to move when
 // the board turns, White otherwise.
 func (m *Model) facing() chess.Color {
+	if m.vs.computer {
+		return m.vs.human // against the computer the board stays on the human's side
+	}
 	if m.flip {
 		return m.game.Turn()
 	}

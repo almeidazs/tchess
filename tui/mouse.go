@@ -32,6 +32,8 @@ func (m *Model) handleMouse(msg tea.MouseMsg) tea.Cmd {
 			return m.openClick(msg.X, msg.Y)
 		case screenClocks:
 			return m.clocksClick(msg.X, msg.Y)
+		case screenOpponent:
+			return m.opponentClick(msg.X, msg.Y)
 		}
 		return m.mouseDown(msg.X, msg.Y)
 	case msg.Action == tea.MouseActionMotion && m.drag != nil:
@@ -76,6 +78,10 @@ func (m *Model) mouseDown(x, y int) tea.Cmd {
 	case modePlay:
 		if !onBoard {
 			m.clearSelection()
+			return nil
+		}
+		if !m.humanTurn() {
+			m.notice = "Wait for the computer's move"
 			return nil
 		}
 		m.showCursor = false

@@ -24,11 +24,12 @@ func (m *Model) gamePGN() string {
 		{Name: "Site", Value: "tchess"},
 		{Name: "Date", Value: m.now().Format("2006.01.02")},
 		{Name: "Round", Value: "-"},
-		{Name: "White", Value: colorName(chess.White)},
-		{Name: "Black", Value: colorName(chess.Black)},
+		{Name: "White", Value: m.pgnPlayer(chess.White)},
+		{Name: "Black", Value: m.pgnPlayer(chess.Black)},
 		{Name: "Result", Value: "*"},
 		{Name: "TimeControl", Value: pgnTimeControl(m.tc)},
 	}
+	tags = append(tags, m.opponentTags()...)
 	if t := m.game.Termination(); t != chess.NoTermination {
 		tags = append(tags, chess.Tag{Name: "Termination", Value: terminationText(t)})
 	}
@@ -44,6 +45,77 @@ func (m *Model) gamePGN() string {
 		comments[i] = strings.Join(parts, " ")
 	}
 	return m.game.PGN(tags, comments)
+}
+
+// Tags tchess adds to remember a game against the computer, so it can be
+// resumed against the same opponent.
+const (
+	tagOpponent = "TchessOpponent" // "computer"
+	tagElo      = "TchessElo"      // the computer's strength: an Elo or "max"
+	tagHuman    = "TchessHuman"    // the human's side: "white" or "black"
+	tagAssist   = "TchessAssist"   // help used: "takebacks", "hints"
+)
+
+// pgnPlayer names a side in the PGN: the engine and its strength for the
+// computer, "Player" for the human, the color between two people.
+func (m *Model) pgnPlayer(c chess.Color) string {
+	switch {
+	case !m.vs.computer:
+		return colorName(c)
+	case c == m.vs.human:
+		return "Player"
+	}
+	return m.computerName() + " (" + levelName(m.vs.elo) + ")"
+}
+
+// opponentTags records the computer opponent and the help the human used.
+func (m *Model) opponentTags() []chess.Tag {
+	if !m.vs.computer {
+		return nil
+	}
+	elo := "max"
+	if m.vs.elo > 0 {
+		elo = strconv.Itoa(m.vs.elo)
+	}
+	tags := []chess.Tag{
+		{Name: tagOpponent, Value: "computer"},
+		{Name: tagElo, Value: elo},
+		{Name: tagHuman, Value: strings.ToLower(colorName(m.vs.human))},
+	}
+	var assist []string
+	if m.assistTakeback {
+		assist = append(assist, "takebacks")
+	}
+	if m.assistHint {
+		assist = append(assist, "hints")
+	}
+	if len(assist) > 0 {
+		tags = append(tags, chess.Tag{Name: tagAssist, Value: strings.Join(assist, ", ")})
+	}
+	return tags
+}
+
+// recordOpponent reads back the opponent of a game tchess saved. Without
+// an engine, a game against the computer goes on between two players.
+func (m *Model) recordOpponent(pg *chess.PGNGame) {
+	m.vs = opponent{}
+	assist := pg.Tag(tagAssist)
+	m.assistTakeback = strings.Contains(assist, "takebacks")
+	m.assistHint = strings.Contains(assist, "hints")
+	if pg.Tag(tagOpponent) != "computer" || pg.Game.IsOver() {
+		return
+	}
+	if !m.engine.available() {
+		m.notice = "No engine found: playing two-player"
+		return
+	}
+	m.vs = opponent{computer: true, human: chess.White}
+	if pg.Tag(tagHuman) == "black" {
+		m.vs.human = chess.Black
+	}
+	if elo, ok := ParseLevel(pg.Tag(tagElo)); ok {
+		m.vs.elo = elo
+	}
 }
 
 // clockSource is where the clocks of a game opened from PGN come from.
@@ -103,6 +175,10 @@ func (m *Model) loadRecord(pg *chess.PGNGame, src clockSource, tc clock.TimeCont
 	m.notice, m.input, m.inputErr = "", "", ""
 	m.anim, m.reviewing, m.help = nil, false, false
 	m.lowWarned = [2]bool{}
+	m.stopComputer()
+	m.engineGame++
+	m.resetAnalysis()
+	m.recordOpponent(pg)
 	m.clearSelection()
 
 	n := pg.Game.Ply()
@@ -146,7 +222,7 @@ func (m *Model) loadRecord(pg *chess.PGNGame, src clockSource, tc clock.TimeCont
 	if m.clock != nil {
 		cmds = append(cmds, tick(m.tickGen))
 	}
-	return tea.Batch(cmds...)
+	return tea.Batch(append(cmds, m.maybeComputer())...)
 }
 
 // pgnTimeControl writes a time control as the PGN tag does: "300+3", or

@@ -143,7 +143,8 @@ func TestFinishedOrNewGameForgetsSave(t *testing.T) {
 	if m2.resume == nil {
 		t.Fatal("saved game not found")
 	}
-	press(m2, "down") // first time control instead of "Continue"
+	press(m2, "down")
+	press(m2, "down") // past "Continue" and "Opponent", the first time control
 	press(m2, "enter")
 	if _, err := os.Stat(path); !errors.Is(err, fs.ErrNotExist) || m2.resume != nil {
 		t.Fatalf("starting another game discards the saved one: %v", err)

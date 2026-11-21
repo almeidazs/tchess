@@ -22,6 +22,8 @@ func (m *Model) View() string {
 		page = m.openView()
 	case screenClocks:
 		page = m.clocksView()
+	case screenOpponent:
+		page = m.opponentView()
 	}
 	if page != "" {
 		ox, oy := centerOffset(m.width, m.height, lipgloss.Width(page), lipgloss.Height(page))
@@ -47,12 +49,17 @@ func (m *Model) gameView(l layout) string {
 
 	lines := make([]string, 0, l.totalH)
 	lines = append(lines, m.headerView(l), "")
+	bar := m.evalBar(8 * l.cellH)
 	for i := range board {
 		p := ""
 		if i < len(panel) {
 			p = panel[i]
 		}
-		lines = append(lines, board[i]+gap+p)
+		g := gap
+		if i < len(bar) {
+			g = " " + bar[i] + " "
+		}
+		lines = append(lines, board[i]+g+p)
 	}
 	lines = append(lines, "", truncate(m.statusView(), l.totalW), truncate(m.helpView(), l.totalW))
 

@@ -41,6 +41,16 @@ type Options struct {
 	// of the menu: one opens directly, several are listed.
 	Import     []*chess.PGNGame
 	ImportPath string
+
+	// EnginePath is the UCI engine to play against and analyze with
+	// (default: none, which disables both).
+	EnginePath string
+	// Computer, when set, overrides the saved opponent for this run: the
+	// computer at this strength (a level name or an Elo, see ParseLevel).
+	Computer string
+	// Color overrides the human's side against the computer for this run:
+	// "white", "black" or "random".
+	Color string
 }
 
 // Model is the Bubble Tea model.
@@ -87,12 +97,29 @@ type Model struct {
 	themes themePicker
 	open   openState
 	clocks clockChoice
+	opp    opponentPicker
 	resume *savedGame // unfinished game offered by the menu
 
 	savedPath    string // file the finished game was saved to, "" until then
 	resultHidden bool   // the result card is put aside to see the board
 	undoTarget   int    // while a take-back is asked: plies the game would keep
-	files        *fileStore
+
+	engine     *engineCtl
+	engineName string // the engine's own name, once it has started
+	engineGame int    // game number, so the engine knows a new game started
+	choice     opponentChoice
+	vs         opponent // the opponent of the current game
+	thinking   bool     // the computer is searching for its move
+
+	evals       map[int]evalScore // evaluations by ply, for review and the end
+	evalPending int               // ply being evaluated, -1 for none
+
+	hint           chess.Move // the engine's suggestion for the position at hintPly
+	hintPly        int
+	hintSet        bool
+	assistTakeback bool // the human took moves back against the computer
+	assistHint     bool // the human asked for hints
+	files          *fileStore
 
 	help     bool   // help overlay open
 	themeIdx int    // active theme, index into themes
@@ -122,18 +149,35 @@ func New(opts Options) *Model {
 		player = sound.Nop{}
 	}
 	m := &Model{
-		startWith:  opts.TimeControl,
-		selected:   chess.NoSquare,
-		animate:    true,
-		now:        now,
-		cfg:        opts.Config,
-		saver:      &saver{fn: opts.Save},
-		player:     player,
-		soundOn:    opts.Config.Sound && !opts.Mute,
-		flip:       opts.Config.Flip,
-		files:      &fileStore{gamesDir: opts.GamesDir, resumePath: opts.ResumePath},
-		importPGN:  opts.Import,
-		importPath: opts.ImportPath,
+		startWith:   opts.TimeControl,
+		selected:    chess.NoSquare,
+		animate:     true,
+		now:         now,
+		cfg:         opts.Config,
+		saver:       &saver{fn: opts.Save},
+		player:      player,
+		soundOn:     opts.Config.Sound && !opts.Mute,
+		flip:        opts.Config.Flip,
+		files:       &fileStore{gamesDir: opts.GamesDir, resumePath: opts.ResumePath},
+		importPGN:   opts.Import,
+		importPath:  opts.ImportPath,
+		engine:      &engineCtl{path: opts.EnginePath},
+		evals:       map[int]evalScore{},
+		evalPending: -1,
+		choice: opponentChoice{
+			computer: opts.Config.Opponent == "computer",
+			elo:      opts.Config.ComputerElo,
+			color:    opts.Config.HumanColor,
+		},
+	}
+	if elo, ok := ParseLevel(opts.Computer); ok && opts.Computer != "" {
+		m.choice.computer, m.choice.elo = true, elo
+	}
+	if opts.Color != "" {
+		m.choice.color = opts.Color
+	}
+	if m.choice.color == "" {
+		m.choice.color = "white"
 	}
 	theme := opts.Config.Theme
 	if opts.Theme != "" {
@@ -162,38 +206,56 @@ func (m *Model) Init() tea.Cmd {
 
 // Update routes Bubble Tea messages to their handlers.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmd := m.update(msg)
+	// Whatever happened may have put a position without an evaluation on
+	// screen (review, the end of a game): ask the engine for one.
+	return m, tea.Batch(cmd, m.autoEval())
+}
+
+// update handles one message.
+func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 	case tickMsg:
-		return m, m.onTick(msg)
+		return m.onTick(msg)
 	case animMsg:
-		return m, m.onAnimFrame(msg)
+		return m.onAnimFrame(msg)
+	case engineMsg:
+		return m.onEngine(msg)
 	case saveErrMsg:
 		m.say(msg.what)
 	case exportedMsg:
 		m.onExported(msg)
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
+			return tea.Quit
 		}
 		m.anim = nil // any input skips the animation
 		if m.help {
-			return m, m.helpKey(msg.String())
+			return m.helpKey(msg.String())
 		}
 		switch m.screen {
 		case screenMenu:
-			return m, m.menuKey(msg)
+			return m.menuKey(msg)
 		case screenThemes:
-			return m, m.themesKey(msg.String())
+			return m.themesKey(msg.String())
 		case screenOpen:
-			return m, m.openKey(msg.String())
+			return m.openKey(msg.String())
 		case screenClocks:
-			return m, m.clocksKey(msg.String())
+			return m.clocksKey(msg.String())
+		case screenOpponent:
+			return m.opponentKey(msg.String())
 		}
-		return m, m.gameKey(msg.String())
+		return m.gameKey(msg.String())
 	case tea.MouseMsg:
-		return m, m.handleMouse(msg)
+		return m.handleMouse(msg)
 	}
-	return m, nil
+	return nil
+}
+
+// Close stops the engine process, if one was started. Call it when the
+// program ends.
+func (m *Model) Close() {
+	m.engine.close()
 }

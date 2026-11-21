@@ -26,12 +26,17 @@ const (
 )
 
 // menuEntries lists the selectable lines: the saved game, if any, the
-// time controls and the options.
+// opponent, the time controls and the options.
 func (m *Model) menuEntries() []menuEntry {
 	var out []menuEntry
 	if m.resume != nil {
 		out = append(out, menuEntry{kind: entryResume, label: "Continue", right: m.resume.label})
 	}
+	opp := m.opponentSummary()
+	if !m.choice.computer || m.engine.available() {
+		opp += " ›" // without an engine the summary needs the whole line
+	}
+	out = append(out, menuEntry{kind: entryOpponent, label: "Opponent", right: opp})
 	for _, it := range menuItems {
 		e := menuEntry{kind: entryTime, label: it.label, tc: it.tc}
 		switch it.tc {
@@ -63,11 +68,10 @@ func (m *Model) menuLines() (lines []string, entryLine []int) {
 		switch {
 		case e.kind == entryResume:
 			lines = append(lines, dimStyle.Render("Saved game"))
-		case e.kind == entryTime && (i == 0 || entries[i-1].kind == entryResume):
-			if i > 0 {
-				lines = append(lines, "")
-			}
-			lines = append(lines, dimStyle.Render("Time control"))
+		case e.kind == entryOpponent && i > 0:
+			lines = append(lines, "")
+		case e.kind == entryTime && entries[i-1].kind == entryOpponent:
+			lines = append(lines, "", dimStyle.Render("Time control"))
 		case e.kind == entryTheme:
 			lines = append(lines, "", dimStyle.Render("Options"))
 		}
@@ -189,6 +193,8 @@ func (m *Model) chooseEntry() tea.Cmd {
 		return m.toggleFlip()
 	case entryOpen:
 		m.openPicker()
+	case entryOpponent:
+		m.openOpponent()
 	}
 	return nil
 }
@@ -197,7 +203,15 @@ func (m *Model) chooseEntry() tea.Cmd {
 // on the saved time control. A time control that is not a preset is
 // offered again when the player opens the custom input.
 func (ms *menuState) restore(entries []menuEntry, saved string) {
-	ms.cursor = 0 // the saved game, or the first preset
+	ms.cursor = 0 // the saved game
+	if entries[0].kind != entryResume {
+		for i, e := range entries {
+			if e.kind == entryTime {
+				ms.cursor = i // the first preset
+				break
+			}
+		}
+	}
 	want, err := clock.Parse(saved)
 	if saved == "" || err != nil {
 		return
