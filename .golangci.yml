@@ -22,8 +22,6 @@ linters:
         - ifElseChain # switch-vs-if is a style call, not a defect
     misspell:
       locale: US
-      ignore-rules: # Portuguese UI strings
-        - empate
     revive:
       rules:
         - name: blank-imports
