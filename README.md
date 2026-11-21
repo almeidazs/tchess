@@ -26,10 +26,13 @@ e todas as regras da FIDE valem, de en passant à regra dos 75 lances.
 - Mouse: arraste a peça até a casa, ou clique na origem e depois no destino. Os lances legais aparecem como pontos e as capturas como cantos marcados.
 - Teclado: as setas param só onde existe lance possível, ou seja, nas suas peças que podem andar ou nos destinos da peça selecionada.
 - Também dá para digitar o lance depois de `:`, em SAN ou em coordenadas (`Nf3`, `exd5`, `O-O`, `e2e4`). Enquanto você digita, as peças que o texto pode indicar acendem no tabuleiro.
-- Depois de cada lance a peça desliza e o tabuleiro gira 180°. Qualquer tecla pula a animação, e o relógio do adversário só começa quando ela acaba.
+- Depois de cada lance a peça desliza e o tabuleiro gira 180°. Qualquer tecla pula a animação, e o relógio do adversário só começa quando ela acaba. Quem prefere ver sempre do lado das brancas desliga o giro no menu ou com `f`.
 - Relógio com incremento Fischer (bullet, blitz, rápida ou um tempo à sua escolha) e o tempo gasto em cada lance, com barras no histórico.
 - Ao lado de cada jogador ficam as peças que ele já capturou e a vantagem de material.
-- Seis temas de tabuleiro trocados com `s`, sons para lance, captura, xeque, roque, promoção e fim de partida, e uma ajuda com todos os atalhos no `?`. O tema e o som ficam salvos para a próxima vez.
+- Dá para voltar um lance, se o adversário aceitar, e rever qualquer posição anterior com `[` e `]` ou clicando no histórico, sem parar o relógio.
+- A partida em andamento fica salva sozinha. Se você fechar o terminal, o menu oferece continuar de onde parou, com os relógios como estavam.
+- Toda partida terminada fica salva em PGN, com o tempo de cada lance nos comentários `[%clk]` e `[%emt]` que o Lichess lê. Dá para abrir qualquer uma de novo pelo menu, ou importar um PGN de outro programa.
+- Seis temas de tabuleiro, escolhidos no menu com uma prévia do tabuleiro ou trocados com `s` durante a partida. Sons para lance, captura, xeque, roque, promoção e fim de partida, e uma ajuda com todos os atalhos no `?`. Tudo fica salvo para a próxima vez.
 - Por baixo há um motor de bitboards que gera lances sem alocar memória e passa de 160 milhões de posições por segundo no perft.
 
 <div align="center">
@@ -52,7 +55,7 @@ Para compilar a partir do código:
 
 ```sh
 git clone https://github.com/almeidazs/tchess.git
-cd chess
+cd tchess
 make run
 ```
 
@@ -61,9 +64,10 @@ O jogo precisa de um terminal com truecolor e mouse, como Kitty, WezTerm, Ghostt
 ## Como jogar
 
 ```sh
-tchess                  # abre o menu de controle de tempo
+tchess                  # abre o menu
 tchess --time 5+3       # começa direto: 5 minutos + 3 segundos por lance
 tchess --time none      # sem relógio
+tchess --pgn jogo.pgn   # abre uma partida de um arquivo PGN
 tchess --theme Oceano   # outro tema só nesta execução
 tchess --no-sound       # sem som só nesta execução
 tchess perft 6          # autoteste do gerador de lances
@@ -76,14 +80,23 @@ tchess --version
 | Digitar o lance | | `:`, o lance e `enter` |
 | Cancelar a seleção | clicar fora ou na mesma peça | `esc` |
 | Escolher a promoção | clicar na peça do seletor | `↑↓` e `enter`, ou `q` `r` `b` `n` |
+| Pedir para voltar o lance | | `u` (o adversário responde `y` ou `n`) |
+| Rever lances anteriores | clicar no lance do histórico | `[` e `]` (no fim da partida, também `←` e `→`), `home` e `end`, `esc` volta |
+| Esconder ou mostrar o resultado | | `esc` no fim da partida |
+| Exportar a partida em PGN | | `e` |
 | Oferecer ou reivindicar empate | | `d` |
 | Desistir | | `r` |
 | Trocar o tema | | `s` |
 | Ligar ou desligar o som | | `m` |
+| Ligar ou desligar o giro do tabuleiro | | `f` |
 | Ver os atalhos | | `?` |
 | Sair | | `q` ou `ctrl+c` |
 
 Quando a posição permite reivindicar empate por repetição tripla ou pela regra dos 50 lances, a barra de status avisa, e `d` faz a reivindicação. Fora desses casos, `d` oferece empate e o adversário responde com `y` ou `n`.
+
+O menu tem os controles de tempo e, embaixo, as opções: o tema (abre a lista com uma prévia do tabuleiro em cada um), o giro do tabuleiro e "Abrir PGN". Quando há uma partida interrompida, o primeiro item é "Continuar".
+
+Quem pede para voltar o lance é quem acabou de jogar, e o adversário decide. O relógio de quem pediu volta ao que marcava no momento do lance, sem o incremento que ganhou com ele, e o do adversário volta ao que marcava antes de começar a correr. Na revisão o tabuleiro mostra a posição escolhida, o relógio continua correndo e só dá para jogar de novo depois de voltar ao presente.
 
 O campo do `:` aceita o lance escrito de vários jeitos: `Nf3`, `nf3`, `Ngf3`, `g1f3` ou `g1-f3`, roque como `O-O` ou `0-0`, captura com ou sem `x` e promoção como `e8=Q`, `e8Q` ou `e7e8q`. Sinais como `+`, `#`, `!` e `?` são ignorados. Se o texto serve para dois lances (`Nd2` com os dois cavalos podendo ir), o jogo pede para desfazer a ambiguidade. Escrever só `e8` abre o seletor de promoção. Em `bc3` com letra minúscula, que pode ser peão ou bispo, vale o peão, como na maioria dos aplicativos.
 
@@ -98,15 +111,22 @@ O tamanho das peças depende do terminal:
 
 ### Preferências
 
-O tema, o som e o último controle de tempo jogado ficam em `~/.tchess/config.toml`, que o jogo grava sozinho quando algo muda. O menu já abre no último ritmo. As flags `--theme` e `--no-sound` valem só para aquela execução e não mudam o arquivo.
+O tema, o som, o giro do tabuleiro e o último controle de tempo jogado ficam em `~/.tchess/config.toml`, que o jogo grava sozinho quando algo muda. O menu já abre no último ritmo. As flags `--theme` e `--no-sound` valem só para aquela execução e não mudam o arquivo.
 
 ```toml
 theme = "Floresta"
 sound = true
+flip = true
 time_control = "5+3"
 ```
 
 Os temas são Madeira, Floresta, Oceano, Grafite, Coral e Mármore. Os sons são gerados pelo próprio programa e tocados pelo player do sistema: `pw-play`, `paplay` ou `aplay` no Linux, `afplay` no macOS e PowerShell no Windows. Os arquivos WAV ficam em `~/.tchess/sounds/`. Sem nenhum desses players, o jogo roda mudo.
+
+### Partidas salvas e PGN
+
+A partida em andamento é gravada em `~/.tchess/current.pgn` a cada lance, para poder ser retomada. Ao continuar, o relógio fica parado até o próximo lance. Começar outra partida descarta essa.
+
+Toda partida que termina (mate, desistência, empate ou tempo) vai sozinha para `~/.tchess/games/`, num arquivo com a data e a hora, e sai do `current.pgn`. No meio do jogo, `e` salva uma cópia na mesma pasta. Cada lance leva o relógio depois dele (`[%clk 0:04:58.0]`) e o tempo gasto (`[%emt 0:00:04.2]`), então o arquivo pode ser importado direto no Lichess. "Abrir PGN", no menu, lista essa pasta e aceita qualquer outro caminho; `--pgn` faz o mesmo pela linha de comando. A leitura aceita o que outros programas escrevem: comentários, variantes (que são ignoradas), NAGs, posição inicial por FEN e lances em SAN ou em coordenadas. Uma partida terminada abre na posição final, com o resultado e o motivo na barra de status, e as setas passam pelos lances. Uma inacabada continua de onde parou, sem relógio.
 
 ## Como funciona
 
@@ -120,15 +140,17 @@ flowchart LR
         model --> mouse["mouse.go<br/>arrastar e soltar"]
         model --> cursor["cursor.go<br/>navegação por setas"]
         model --> input["moveinput.go<br/>lance digitado"]
+        model --> record["record.go · files.go<br/>PGN, retomar, exportar"]
     end
 
     subgraph internal["internal/"]
         config["config/<br/>~/.tchess/config.toml"]
+        atomic["atomicfile/<br/>gravação atômica"]
         sound["sound/<br/>síntese + player do sistema"]
     end
 
     subgraph core["núcleo · sem dependência de UI"]
-        chess["chess/<br/>regras · movegen · FEN · SAN · perft"]
+        chess["chess/<br/>regras · movegen · FEN · SAN · PGN · perft"]
         clock["clock/<br/>incremento Fischer"]
     end
 
@@ -136,9 +158,11 @@ flowchart LR
     model --> clock
     main --> config
     model --> sound
+    record --> atomic
+    config --> atomic
 ```
 
-O pacote `chess` é o motor de regras, o `clock` é o relógio e o `tui` é a interface. A interface usa o motor por uma API pequena (`Game.Play`, `Game.MovesFrom`, `Game.ClaimDraw` e poucas outras). O motor devolve só enums, e todo texto que aparece na tela mora na interface.
+O pacote `chess` é o motor de regras, o `clock` é o relógio e o `tui` é a interface. A interface usa o motor por uma API pequena (`Game.Play`, `Game.Undo`, `Game.PositionAt`, `Game.PGN`, `ParsePGN` e poucas outras). O motor devolve só enums, e todo texto que aparece na tela mora na interface.
 
 <details>
 <summary><b>O motor: bitboards e lances legais</b></summary>
@@ -244,7 +268,7 @@ O gerador de lances é conferido com perft, que conta todas as posições alcan�
 
 <sub>¹ Intel Core i7-13620H, Go 1.27, uma thread. Dá para repetir com <code>make bench</code> e <code>make perft</code>.</sub>
 
-Os testes também cobrem cada regra separadamente (en passant, roque, cravadas, promoção, SAN, empates e queda de seta), o relógio e a interface, com cliques e arrastos no tabuleiro virado, navegação pelo teclado, promoção, animações e o desenho em todos os tamanhos de tela. O campo de lance digitado, a troca de tema, a gravação da config e a escolha de cada som também têm testes, que não tocam áudio de verdade.
+Os testes também cobrem cada regra separadamente (en passant, roque, cravadas, promoção, SAN, PGN, desfazer e empates), o relógio e a interface, com cliques e arrastos no tabuleiro virado, navegação pelo teclado, promoção, animações e o desenho em todos os tamanhos de tela. O lance digitado, o voltar lance com os relógios, a revisão, exportar, importar e retomar uma partida, os seletores de tema e de PGN, a config e a escolha de cada som também têm testes, que gravam numa pasta temporária e não tocam áudio de verdade.
 
 ## Desenvolvimento
 
@@ -279,14 +303,15 @@ As imagens deste README saem de [`tools/shot`](tools/shot). Ele controla a inter
 │   ├── movegen.go         gerador de lances legais
 │   ├── material.go        valores, material insuficiente
 │   ├── zobrist.go         hash de posição
-│   ├── fen.go · san.go    notações
-│   ├── game.go            Game: histórico e lances
+│   ├── fen.go · san.go    notações · pgn.go: escrita e leitura de PGN
+│   ├── game.go            Game: histórico, lances, Undo e PositionAt
 │   ├── gameover.go        mate, empates, repetição, desistência, queda de seta
 │   ├── outcome.go         Outcome e Termination · errors.go
 │   └── perft.go           contagem de nós
 ├── clock/                 TimeControl (timecontrol.go) e Clock (clock.go)
 ├── internal/
 │   ├── pixel/             framebuffer de meios-blocos ▀, genérico
+│   ├── atomicfile/        gravação atômica (arquivo temporário + rename)
 │   ├── config/            leitura e gravação de ~/.tchess/config.toml
 │   └── sound/             síntese dos efeitos (synth.go) e player do sistema (player.go)
 ├── tui/                   interface Bubble Tea
@@ -294,14 +319,18 @@ As imagens deste README saem de [`tools/shot`](tools/shot). Ele controla a inter
 │   ├── model.go           Model, Init, Update
 │   ├── game.go            fluxo da partida · keyboard.go · mouse.go · cursor.go · selection.go
 │   ├── moveinput.go       lance digitado: leitura tolerante e destaque ao vivo
-│   ├── prefs.go           tema, som e gravação das preferências · help.go: a ajuda do ?
+│   ├── undo.go            pedir e aceitar voltar o lance · review.go: rever posições anteriores
+│   ├── record.go          partida ↔ PGN com relógios · files.go: retomar, exportar, listar · export.go
+│   ├── prefs.go           tema, som, giro e gravação das preferências · help.go: a ajuda do ?
 │   ├── layout.go          geometria adaptativa · coords.go: casa ↔ tela
 │   ├── view.go            composição da tela · status.go · panel.go · format.go
 │   ├── board.go           aparência das casas · board_pixel.go · board_glyph.go
 │   ├── anim.go            deslize e giro do tabuleiro
 │   ├── sprites.go         desenho dos sprites · sprite_data.go: a pixel art
 │   ├── theme.go           os seis temas e os estilos · glyphs.go · text.go (textos em português)
-│   └── menu.go            menu de controle de tempo
+│   ├── menu.go            menu: continuar, controles de tempo e opções
+│   ├── themes.go          seletor de tema com prévia do tabuleiro
+│   └── openpgn.go         seletor de arquivos PGN
 ├── cmd/tchess/            binário (main.go, perft.go)
 ├── tools/shot/            gerador das imagens do README (módulo separado)
 └── assets/                print e GIF gerados
@@ -312,7 +341,3 @@ Cada pacote tem um `doc.go` com a sua documentação. Tipos do domínio ficam em
 ## Licença
 
 Distribuído sob a [Licença Apache 2.0](LICENSE). Copyright 2026 Almeida.
-
-<div align="center">
-<sub>Feito com <a href="https://github.com/charmbracelet/bubbletea">Bubble Tea</a> e <a href="https://github.com/charmbracelet/lipgloss">Lip Gloss</a>.</sub>
-</div>
