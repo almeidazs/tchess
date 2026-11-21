@@ -23,13 +23,13 @@ func Parse(s string) (TimeControl, error) {
 	baseStr, incStr, hasInc := strings.Cut(s, "+")
 	base, err := strconv.ParseFloat(baseStr, 64)
 	if err != nil || base <= 0 || base > 600 {
-		return TimeControl{}, fmt.Errorf("tempo base inválido %q (minutos entre 0 e 600)", baseStr)
+		return TimeControl{}, fmt.Errorf("invalid base time %q (minutes between 0 and 600)", baseStr)
 	}
 	var inc float64
 	if hasInc {
 		inc, err = strconv.ParseFloat(incStr, 64)
 		if err != nil || inc < 0 || inc > 600 {
-			return TimeControl{}, fmt.Errorf("incremento inválido %q (segundos entre 0 e 600)", incStr)
+			return TimeControl{}, fmt.Errorf("invalid increment %q (seconds between 0 and 600)", incStr)
 		}
 	}
 	return TimeControl{
