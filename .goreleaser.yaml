@@ -49,6 +49,9 @@ nfpms:
     section: games
     formats: [deb, rpm, apk, archlinux]
     bindir: /usr/bin
+    # The engine to play against (an optional dependency on Arch); tchess
+    # runs fine without it.
+    recommends: [stockfish]
     contents:
       - src: README.md
         dst: /usr/share/doc/tchess/README.md
