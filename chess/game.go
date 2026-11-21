@@ -14,9 +14,11 @@ type MoveRecord struct {
 // rule end the game automatically; threefold repetition and the 50-move rule
 // are draws the player to move may claim.
 type Game struct {
+	start       Position // where the game began (StartFEN or a custom FEN)
 	pos         Position
 	legal       MoveList
 	history     []MoveRecord
+	undos       []Undo   // what Unmake needs to take back each move
 	keys        []uint64 // repetition keys of every position, current last
 	outcome     Outcome
 	termination Termination
@@ -37,7 +39,7 @@ func NewGameFromFEN(fen string) (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	g := &Game{pos: *p}
+	g := &Game{start: *p, pos: *p}
 	g.refresh()
 	return g, nil
 }
@@ -119,8 +121,43 @@ func (g *Game) Play(m Move) error {
 	case m.IsCapture():
 		rec.Captured = g.pos.board[m.To()]
 	}
-	g.pos.Make(m)
+	g.undos = append(g.undos, g.pos.Make(m))
 	g.history = append(g.history, rec)
 	g.refresh()
 	return nil
 }
+
+// Undo takes back the last move. A finished game cannot be undone: its
+// result stands.
+func (g *Game) Undo() error {
+	if g.IsOver() {
+		return ErrGameOver
+	}
+	n := len(g.history)
+	if n == 0 {
+		return ErrNothingToUndo
+	}
+	g.pos.Unmake(g.history[n-1].Move, g.undos[n-1])
+	g.history = g.history[:n-1]
+	g.undos = g.undos[:n-1]
+	g.keys = g.keys[:len(g.keys)-1]
+	g.pos.LegalMoves(&g.legal)
+	return nil
+}
+
+// StartPosition returns the position the game began from.
+func (g *Game) StartPosition() Position { return g.start }
+
+// PositionAt returns the position after the first ply half-moves
+// (0 is the starting position). ply is clamped to the moves played.
+func (g *Game) PositionAt(ply int) Position {
+	ply = min(max(ply, 0), len(g.history))
+	p := g.start
+	for _, r := range g.history[:ply] {
+		p.Make(r.Move)
+	}
+	return p
+}
+
+// Ply returns the number of half-moves played.
+func (g *Game) Ply() int { return len(g.history) }

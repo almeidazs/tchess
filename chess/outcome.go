@@ -46,4 +46,8 @@ const (
 	Resignation
 	Timeout
 	TimeoutVsInsufficientMaterial
+	// RecordedResult is a result taken from a game record (such as a PGN
+	// file) that the rules alone do not explain: a resignation, a draw
+	// offer or a flag fall the record does not detail.
+	RecordedResult
 )

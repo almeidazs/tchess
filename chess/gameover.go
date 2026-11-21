@@ -108,6 +108,31 @@ func (g *Game) FlagFall(c Color) error {
 	return nil
 }
 
+// Record ends the game with a result the position does not reach on its
+// own, as read from a game record. t says why: DrawAgreement,
+// ThreefoldRepetition or FiftyMoveRule for a draw, Resignation for a win,
+// Timeout or TimeoutVsInsufficientMaterial, or RecordedResult when the
+// record does not say. o must agree with t.
+func (g *Game) Record(o Outcome, t Termination) error {
+	if g.IsOver() {
+		return ErrGameOver
+	}
+	ok := false
+	switch t {
+	case DrawAgreement, ThreefoldRepetition, FiftyMoveRule, TimeoutVsInsufficientMaterial:
+		ok = o == Draw
+	case Resignation, Timeout:
+		ok = o == WhiteWins || o == BlackWins
+	case RecordedResult:
+		ok = o != Ongoing
+	}
+	if !ok {
+		return ErrBadResult
+	}
+	g.end(o, t)
+	return nil
+}
+
 // end records the result.
 func (g *Game) end(o Outcome, t Termination) {
 	g.outcome, g.termination = o, t
