@@ -4,6 +4,8 @@ Every release's changes are listed here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-21
+
 First release.
 
 ### Added
@@ -23,4 +25,5 @@ First release.
 - Preferences in `~/.tchess/config.toml`.
 - deb, rpm, apk and Arch packages and a Docker image at `ghcr.io/almeidazs/tchess`.
 
-[Unreleased]: https://github.com/almeidazs/tchess/commits/main
+[Unreleased]: https://github.com/almeidazs/tchess/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/almeidazs/tchess/releases/tag/v0.1.0
