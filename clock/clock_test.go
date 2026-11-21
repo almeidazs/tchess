@@ -82,3 +82,28 @@ func TestStartDelay(t *testing.T) {
 		t.Fatalf("after press: %v", got)
 	}
 }
+
+func TestRestore(t *testing.T) {
+	now := time.Unix(0, 0)
+	cl := New(TimeControl{Base: time.Minute, Increment: 2 * time.Second}, func() time.Time { return now })
+	cl.Restore([2]time.Duration{30 * time.Second, 40 * time.Second}, chess.Black, true)
+	now = now.Add(5 * time.Second)
+	if got := cl.Remaining(chess.Black); got != 35*time.Second {
+		t.Fatalf("black %v, want 35s", got)
+	}
+	if got := cl.Remaining(chess.White); got != 30*time.Second {
+		t.Fatalf("white %v, want 30s", got)
+	}
+
+	// Stopped: nothing runs until the side to move presses.
+	cl.Restore([2]time.Duration{30 * time.Second, 40 * time.Second}, chess.White, false)
+	now = now.Add(time.Hour)
+	if cl.Running() || cl.Remaining(chess.White) != 30*time.Second {
+		t.Fatal("a stopped clock should not run")
+	}
+	cl.Press(chess.White)
+	now = now.Add(time.Second)
+	if cl.Remaining(chess.White) != 30*time.Second || cl.Remaining(chess.Black) != 39*time.Second {
+		t.Fatalf("after press: %v / %v", cl.Remaining(chess.White), cl.Remaining(chess.Black))
+	}
+}

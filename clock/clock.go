@@ -87,3 +87,12 @@ func (cl *Clock) Stop() {
 		cl.running = false
 	}
 }
+
+// Restore sets both players' remaining time and whose time runs, as when
+// taking back a move or resuming a saved game. A running clock counts from
+// now, after the start delay; a stopped one starts on the next Press.
+func (cl *Clock) Restore(remaining [2]time.Duration, active chess.Color, running bool) {
+	cl.remaining = remaining
+	cl.active, cl.running = active, running
+	cl.since = cl.now().Add(cl.delay)
+}
