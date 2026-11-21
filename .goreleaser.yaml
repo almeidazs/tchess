@@ -28,20 +28,73 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
+      - CHANGELOG.md
       - LICENSE
 
 checksum:
   name_template: checksums.txt
 
+nfpms:
+  - id: packages
+    package_name: tchess
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: Almeida
+    maintainer: Almeida <me@almeidazs.com>
+    homepage: https://github.com/almeidazs/tchess
+    description: |-
+      Xadrez para dois jogadores no terminal.
+      Peças em pixel art, mouse e teclado, relógio, temas, sons e todas as
+      regras da FIDE.
+    license: Apache-2.0
+    section: games
+    formats: [deb, rpm, apk, archlinux]
+    bindir: /usr/bin
+    contents:
+      - src: README.md
+        dst: /usr/share/doc/tchess/README.md
+      - src: LICENSE
+        dst: /usr/share/licenses/tchess/LICENSE
+
+dockers_v2:
+  - id: image
+    images:
+      - ghcr.io/almeidazs/tchess
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms: [linux/amd64, linux/arm64]
+    dockerfile: Dockerfile
+    labels:
+      org.opencontainers.image.title: tchess
+      org.opencontainers.image.description: Xadrez para dois jogadores no terminal
+      org.opencontainers.image.source: https://github.com/almeidazs/tchess
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.licenses: Apache-2.0
+
 changelog:
   sort: asc
   use: github
+  groups:
+    - title: Novidades
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Correções
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Outras mudanças
+      order: 999
   filters:
     exclude:
       - "^docs:"
       - "^test:"
       - "^chore:"
+      - "^ci:"
 
 release:
   footer: |
-    **Instalação:** `go install github.com/almeidazs/tchess/cmd/tchess@{{ .Tag }}`
+    **Instalação**
+
+    - Go: `go install github.com/almeidazs/tchess/cmd/tchess@{{ .Tag }}`
+    - Docker: `docker run --rm -it ghcr.io/almeidazs/tchess:{{ .Version }}`
+    - Debian/Ubuntu, Fedora, Alpine e Arch: pacotes `.deb`, `.rpm`, `.apk` e `.pkg.tar.zst` abaixo
