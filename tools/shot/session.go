@@ -7,6 +7,7 @@ import (
 
 	"github.com/almeidazs/tchess/chess"
 	"github.com/almeidazs/tchess/clock"
+	"github.com/almeidazs/tchess/internal/config"
 	"github.com/almeidazs/tchess/tui"
 )
 
@@ -22,7 +23,9 @@ type session struct {
 // newSession creates a model of the given size, optionally skipping the menu.
 func newSession(w, h int, tc *clock.TimeControl) *session {
 	s := &session{g: chess.NewGame(), now: time.Date(2026, 1, 1, 20, 0, 0, 0, time.UTC), w: w, h: h}
-	s.m = tui.New(tui.Options{TimeControl: tc, Now: func() time.Time { return s.now }})
+	cfg := config.Default()
+	cfg.Sound = false
+	s.m = tui.New(tui.Options{TimeControl: tc, Now: func() time.Time { return s.now }, Config: cfg})
 	s.m.Update(tea.WindowSizeMsg{Width: w, Height: h})
 	s.m.Init()
 	return s
@@ -34,6 +37,13 @@ func (s *session) view() string { return s.m.View() }
 // mouse sends a left-button event at (x, y).
 func (s *session) mouse(x, y int, a tea.MouseAction) {
 	s.m.Update(tea.MouseMsg{X: x, Y: y, Action: a, Button: tea.MouseButtonLeft})
+}
+
+// runes types text.
+func (s *session) runes(text string) {
+	for _, r := range text {
+		s.m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+	}
 }
 
 // key sends a key press.

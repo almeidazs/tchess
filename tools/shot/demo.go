@@ -75,28 +75,86 @@ func (r *recorder) dragMove(san string) {
 	r.snap(900 * time.Millisecond)
 }
 
-// demo records the animated GIF: menu, then a few moves by drag and click.
+// typeMove plays by typing the move after ':', one key at a time.
+func (r *recorder) typeMove(san string) {
+	mv := r.s.resolve(san)
+	r.s.now = r.s.now.Add(500 * time.Millisecond)
+	r.s.runes(":")
+	r.snap(400 * time.Millisecond)
+	for _, c := range san {
+		r.s.runes(string(c))
+		r.snap(220 * time.Millisecond)
+	}
+	r.snap(600 * time.Millisecond) // the move is highlighted on the board
+	r.s.key(tea.KeyEnter)
+	if err := r.s.g.Play(mv); err != nil {
+		fail(err)
+	}
+	r.animate(800 * time.Millisecond)
+	r.snap(900 * time.Millisecond)
+}
+
+// demo records the animated GIF: choosing a theme in the menu, then moves
+// by drag, click and typing, a take-back, a look at earlier moves and the
+// help card.
 func demo(path string) {
 	s := newSession(126, 47, nil)
 	r := &recorder{s: s, fs: newFontSet(8)}
 
 	r.snap(1200 * time.Millisecond) // menu
-	s.key(tea.KeyDown)
-	r.snap(300 * time.Millisecond)
-	s.key(tea.KeyDown)
-	r.snap(500 * time.Millisecond)
-	s.key(tea.KeyEnter) // Blitz 5+3
+	for range 7 {                   // down to "Tema"
+		s.key(tea.KeyDown)
+		r.snap(90 * time.Millisecond)
+	}
+	r.snap(400 * time.Millisecond)
+	s.key(tea.KeyEnter) // theme picker
+	r.snap(900 * time.Millisecond)
+	for _, k := range []tea.KeyType{tea.KeyDown, tea.KeyDown, tea.KeyDown, tea.KeyUp, tea.KeyUp} {
+		s.key(k)
+		r.snap(650 * time.Millisecond)
+	}
+	s.key(tea.KeyEnter) // keep Floresta
+	r.snap(700 * time.Millisecond)
+	for range 5 { // back up to Blitz 5+3
+		s.key(tea.KeyUp)
+		r.snap(90 * time.Millisecond)
+	}
+	r.snap(400 * time.Millisecond)
+	s.key(tea.KeyEnter)
 	r.snap(1000 * time.Millisecond)
 
 	r.dragMove("e4")
 	r.clickMove("e5")
-	r.dragMove("Nf3")
+	r.typeMove("Nf3")
 	r.clickMove("Nc6")
 	r.dragMove("Bb5")
-	r.clickMove("a6")
+	r.typeMove("a6")
 	r.dragMove("Bxc6")
-	r.clickMove("dxc6")
-	r.frames[len(r.frames)-1].delay = 2500 * time.Millisecond
+
+	// White asks to take the capture back and Black agrees.
+	s.now = s.now.Add(600 * time.Millisecond)
+	s.runes("u")
+	r.snap(1400 * time.Millisecond)
+	s.runes("y")
+	if err := s.g.Undo(); err != nil {
+		fail(err)
+	}
+	r.snap(1200 * time.Millisecond)
+	r.dragMove("Ba4")
+
+	// A look back at the opening, then back to the game.
+	for range 4 {
+		s.runes("[")
+		r.snap(600 * time.Millisecond)
+	}
+	r.snap(400 * time.Millisecond)
+	s.key(tea.KeyEsc)
+	r.snap(800 * time.Millisecond)
+
+	s.runes("?")
+	r.snap(2500 * time.Millisecond)
+	s.runes("?")
+	r.snap(1500 * time.Millisecond)
 
 	writeGIF(path, r.frames)
 }
