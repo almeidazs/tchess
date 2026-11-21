@@ -36,7 +36,7 @@ func (m *Model) helpEntries() []helpEntry {
 		{"enter", "selecionar e jogar", "jogar"},
 		{":", "digitar o lance (Nf3, e2e4)", "digitar"},
 		{"esc", "cancelar", "cancelar"},
-		{"u", "pedir para voltar o lance", "voltar"},
+		{"u", "voltar o lance (na revisão, até ali)", "voltar"},
 		{"[  ]", "rever lances (no fim, ←→)", "rever"},
 		{"e", "exportar a partida em PGN", "exportar"},
 		{"d", "propor ou reivindicar empate", "empate"},

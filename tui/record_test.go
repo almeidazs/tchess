@@ -103,8 +103,8 @@ func TestResumeAfterRestart(t *testing.T) {
 	if m2.screen != screenGame || m2.game.Position() != wantPos || m2.tc.Increment != 3*time.Second {
 		t.Fatalf("resumed: screen %v ply %d", m2.screen, m2.game.Ply())
 	}
-	if m2.clock.Running() {
-		t.Fatal("the clock waits for the next move")
+	if !m2.clock.Running() {
+		t.Fatal("the side to move's clock runs at once")
 	}
 	if got := m2.clock.Remaining(chess.White); got != 5*time.Minute-7*time.Second+3*time.Second {
 		t.Fatalf("white %v", got)
@@ -251,7 +251,7 @@ func TestImportedFinishedGameIsNotSavedAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := New(Options{Config: config.Default(), Import: pg, GamesDir: filepath.Join(dir, "games")})
+	m := New(Options{Config: config.Default(), Import: []*chess.PGNGame{pg}, GamesDir: filepath.Join(dir, "games")})
 	m.Update(teaSize(140, 50))
 	runCmd(m, m.Init())
 	if files, _ := filepath.Glob(filepath.Join(dir, "games", "*.pgn")); len(files) != 0 {
@@ -265,7 +265,7 @@ func TestImportFinishedGame(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	m := New(Options{Config: config.Default(), Import: pg, ResumePath: filepath.Join(dir, "current.pgn")})
+	m := New(Options{Config: config.Default(), Import: []*chess.PGNGame{pg}, ResumePath: filepath.Join(dir, "current.pgn")})
 	m.Update(teaSize(140, 50))
 	runCmd(m, m.Init())
 	if m.screen != screenGame || m.mode != modeGameOver || m.game.Termination() != chess.RecordedResult {
@@ -283,21 +283,68 @@ func TestImportFinishedGame(t *testing.T) {
 	}
 }
 
-func TestImportUnfinishedPlaysOnWithoutClock(t *testing.T) {
-	pg, err := chess.ParsePGN("[TimeControl \"300+3\"]\n\n1. e4 {[%clk 0:05:00]} e5 {[%clk 0:04:50]} *")
-	if err != nil {
-		t.Fatal(err)
+func TestImportUnfinishedAsksForClocks(t *testing.T) {
+	text := "[TimeControl \"300+3\"]\n\n1. e4 {[%clk 0:05:00]} e5 {[%clk 0:04:50]} *"
+	open := func(t *testing.T) (*Model, *fakeTime) {
+		t.Helper()
+		pg, err := chess.ParsePGN(text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		clk := &fakeTime{time.Unix(0, 0)}
+		m := New(Options{Config: config.Default(), Import: []*chess.PGNGame{pg}, Now: clk.now})
+		m.Update(teaSize(140, 50))
+		m.animate = false
+		runCmd(m, m.Init())
+		return m, clk
 	}
-	m := New(Options{Config: config.Default(), Import: pg})
-	m.Update(teaSize(140, 50))
-	m.animate = false
-	runCmd(m, m.Init())
-	if m.mode != modePlay || m.clock != nil || m.game.Turn() != chess.White {
-		t.Fatalf("mode %v clock %v", m.mode, m.clock)
+
+	// The record's own clocks: White to move with 5:00 left, running.
+	m, clk := open(t)
+	if m.screen != screenClocks || m.clocks.options[0].src != clocksFromRecord {
+		t.Fatalf("screen %v options %v", m.screen, m.clocks.options)
+	}
+	if !strings.Contains(m.View(), "Relógios do PGN") || !strings.Contains(m.View(), "5:00 · 4:50") {
+		t.Fatalf("view:\n%s", m.View())
+	}
+	press(m, "enter")
+	if m.screen != screenGame || m.tc.Increment != 3*time.Second || !m.clock.Running() {
+		t.Fatalf("screen %v tc %v", m.screen, m.tc)
+	}
+	clk.advance(2 * time.Second)
+	if got := m.clock.Remaining(chess.White); got != 4*time.Minute+58*time.Second {
+		t.Fatalf("white %v", got)
+	}
+	if got := m.clock.Remaining(chess.Black); got != 4*time.Minute+50*time.Second {
+		t.Fatalf("black %v", got)
+	}
+
+	// A fresh time control: both clocks full.
+	m, _ = open(t)
+	m.clocks.cursor = 2 // Blitz 3+2 (after the record and Bullet)
+	press(m, "enter")
+	if m.tc.Base != 3*time.Minute || m.clock.Remaining(chess.Black) != 3*time.Minute || m.clockFrom != 2 {
+		t.Fatalf("fresh clocks: tc %v black %v from %d", m.tc, m.clock.Remaining(chess.Black), m.clockFrom)
 	}
 	click(m, chess.G1)
 	click(m, chess.F3)
-	if m.game.Ply() != 3 {
-		t.Fatal("an unfinished import can be played on")
+	pgn := m.gamePGN()
+	if strings.Count(pgn, "%clk") != 1 {
+		t.Fatalf("only the move made with the new clock has a %%clk:\n%s", pgn)
+	}
+
+	// No clock, and Esc goes back to the menu.
+	m, _ = open(t)
+	press(m, "esc")
+	if m.screen != screenMenu {
+		t.Fatal("esc returns to the menu")
+	}
+	m, _ = open(t)
+	for m.clocks.options[m.clocks.cursor].src != clocksOff {
+		press(m, "down")
+	}
+	press(m, "enter")
+	if m.clock != nil || m.mode != modePlay {
+		t.Fatal("Sem relógio plays on without a clock")
 	}
 }

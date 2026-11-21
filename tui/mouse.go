@@ -30,6 +30,8 @@ func (m *Model) handleMouse(msg tea.MouseMsg) tea.Cmd {
 			return m.themesClick(msg.X, msg.Y)
 		case screenOpen:
 			return m.openClick(msg.X, msg.Y)
+		case screenClocks:
+			return m.clocksClick(msg.X, msg.Y)
 		}
 		return m.mouseDown(msg.X, msg.Y)
 	case msg.Action == tea.MouseActionMotion && m.drag != nil:

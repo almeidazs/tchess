@@ -69,11 +69,14 @@ func main() {
 		if err != nil {
 			fail(err)
 		}
-		pg, err := chess.ParsePGN(string(data))
-		if err != nil {
-			fail(fmt.Errorf("%s: %w", *pgnFlag, err))
+		games, err := chess.ParsePGNGames(string(data))
+		if len(games) == 0 {
+			fail(fmt.Errorf("%s: nenhuma partida válida: %w", *pgnFlag, err))
 		}
-		opts.Import = pg
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "aviso: partidas ignoradas:", err)
+		}
+		opts.Import, opts.ImportPath = games, *pgnFlag
 	}
 
 	// Without a home directory the game still runs, just without saving

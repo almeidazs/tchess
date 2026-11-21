@@ -29,7 +29,7 @@ func (m *Model) startGame(tc clock.TimeControl) tea.Cmd {
 	m.turnStart = m.now()
 	m.input, m.inputErr = "", ""
 	m.lowWarned = [2]bool{}
-	m.moveClocks = nil
+	m.moveClocks, m.clockFrom = nil, 0
 	m.savedPath = ""
 	m.reviewing, m.help = false, false
 	m.clearSelection()
@@ -53,7 +53,7 @@ func (m *Model) toMenu() {
 	m.menu.restore(m.menuEntries(), m.cfg.TimeControl)
 }
 
-// play moveClocks the clock, makes the move and starts the animation. If the
+// play presses the clock, makes the move and starts the animation. If the
 // mover's flag fell before the move was completed, the move does not count.
 func (m *Model) play(mv chess.Move) tea.Cmd {
 	mover, prevOrient := m.game.Turn(), m.orientation

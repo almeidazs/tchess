@@ -49,7 +49,7 @@ func TestReviewKeys(t *testing.T) {
 		t.Fatal("a click on the board returns to the live position without playing")
 	}
 	key(m, "home")
-	for _, k := range []string{"enter", "d", "r", "u", ":"} {
+	for _, k := range []string{"enter", "d", "r", ":"} {
 		key(m, k)
 	}
 	if m.mode != modePlay || m.game.Ply() != 4 || m.selected != chess.NoSquare {

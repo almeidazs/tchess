@@ -37,8 +37,10 @@ type Options struct {
 	// ResumePath is the file that keeps the unfinished game, so it can be
 	// continued after the program closes (default: games are not kept).
 	ResumePath string
-	// Import, when set, opens this game instead of the menu.
-	Import *chess.PGNGame
+	// Import, when set, opens these games (read from ImportPath) instead
+	// of the menu: one opens directly, several are listed.
+	Import     []*chess.PGNGame
+	ImportPath string
 }
 
 // Model is the Bubble Tea model.
@@ -58,7 +60,8 @@ type Model struct {
 	reviewing bool // showing an earlier position instead of the live one
 	reviewPly int  // while reviewing: plies played in the position shown
 
-	moveClocks []moveClock // clock around each move (clock games), aligned with the history
+	moveClocks []moveClock // clock around each move (clock games), from ply clockFrom on
+	clockFrom  int         // first ply with a clock: later than 0 when a clock joined midway
 
 	cursorCol, cursorRow int  // keyboard cursor in screen cells (0,0 = top-left)
 	showCursor           bool // only shown once the keyboard is used
@@ -83,10 +86,12 @@ type Model struct {
 
 	themes themePicker
 	open   openState
+	clocks clockChoice
 	resume *savedGame // unfinished game offered by the menu
 
 	savedPath    string // file the finished game was saved to, "" until then
 	resultHidden bool   // the result card is put aside to see the board
+	undoTarget   int    // while a take-back is asked: plies the game would keep
 	files        *fileStore
 
 	help     bool   // help overlay open
@@ -97,7 +102,8 @@ type Model struct {
 	player   sound.Player
 	soundOn  bool
 
-	importPGN *chess.PGNGame // game to open at startup
+	importPGN  []*chess.PGNGame // games to open at startup
+	importPath string
 
 	animate bool       // post-move animations on the sprite board
 	anim    *animation // running animation, nil when idle
@@ -116,17 +122,18 @@ func New(opts Options) *Model {
 		player = sound.Nop{}
 	}
 	m := &Model{
-		startWith: opts.TimeControl,
-		selected:  chess.NoSquare,
-		animate:   true,
-		now:       now,
-		cfg:       opts.Config,
-		saver:     &saver{fn: opts.Save},
-		player:    player,
-		soundOn:   opts.Config.Sound && !opts.Mute,
-		flip:      opts.Config.Flip,
-		files:     &fileStore{gamesDir: opts.GamesDir, resumePath: opts.ResumePath},
-		importPGN: opts.Import,
+		startWith:  opts.TimeControl,
+		selected:   chess.NoSquare,
+		animate:    true,
+		now:        now,
+		cfg:        opts.Config,
+		saver:      &saver{fn: opts.Save},
+		player:     player,
+		soundOn:    opts.Config.Sound && !opts.Mute,
+		flip:       opts.Config.Flip,
+		files:      &fileStore{gamesDir: opts.GamesDir, resumePath: opts.ResumePath},
+		importPGN:  opts.Import,
+		importPath: opts.ImportPath,
 	}
 	theme := opts.Config.Theme
 	if opts.Theme != "" {
@@ -143,8 +150,10 @@ func New(opts Options) *Model {
 // control was given.
 func (m *Model) Init() tea.Cmd {
 	switch {
-	case m.importPGN != nil:
-		return m.loadRecord(m.importPGN, false)
+	case len(m.importPGN) == 1:
+		return m.openRecord(m.importPGN[0], m.importPath, screenMenu)
+	case len(m.importPGN) > 1:
+		m.showGames(m.importPGN, m.importPath, false)
 	case m.startWith != nil:
 		return m.startGame(*m.startWith)
 	}
@@ -179,6 +188,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.themesKey(msg.String())
 		case screenOpen:
 			return m, m.openKey(msg.String())
+		case screenClocks:
+			return m, m.clocksKey(msg.String())
 		}
 		return m, m.gameKey(msg.String())
 	case tea.MouseMsg:

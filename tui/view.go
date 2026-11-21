@@ -20,6 +20,8 @@ func (m *Model) View() string {
 		page = m.themesView()
 	case screenOpen:
 		page = m.openView()
+	case screenClocks:
+		page = m.clocksView()
 	}
 	if page != "" {
 		ox, oy := centerOffset(m.width, m.height, lipgloss.Width(page), lipgloss.Height(page))

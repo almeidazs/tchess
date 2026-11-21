@@ -177,7 +177,7 @@ func (m *Model) chooseEntry() tea.Cmd {
 	m.menu.err = ""
 	switch e.kind {
 	case entryResume:
-		return m.loadRecord(m.resume.record, true)
+		return m.loadRecord(m.resume.record, clocksFromRecord, clockNoTime)
 	case entryCustom:
 		m.menu.editing, m.menu.input = true, m.menu.custom
 	case entryTime:

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/almeidazs/tchess/chess"
+	"github.com/almeidazs/tchess/clock"
 	"github.com/almeidazs/tchess/internal/pixel"
 )
 
@@ -22,6 +23,7 @@ const (
 	screenGame          // the game itself
 	screenThemes        // theme picker with a board preview
 	screenOpen          // PGN file picker
+	screenClocks        // time control for an unfinished imported game
 )
 
 // mode is the interaction state while on the game screen.
@@ -182,13 +184,35 @@ type pgnFile struct {
 }
 
 // openState is the PGN picker's state: the files of the games folder,
-// then a last entry to type a path.
+// then a last entry to type a path. Once a file with several games is
+// chosen, the picker lists those games instead.
 type openState struct {
 	files   []pgnFile
 	cursor  int
 	editing bool // typing a path
 	input   string
 	err     string
+
+	games      []*chess.PGNGame // games of the chosen file, when it has several
+	source     string           // that file
+	gameCursor int
+	fromFiles  bool // the games came from the file list (esc goes back to it)
+}
+
+// clockOption is one way to go on with an unfinished imported game.
+type clockOption struct {
+	label, right string
+	src          clockSource
+	tc           clock.TimeControl
+}
+
+// clockChoice is the screen asking how to time an unfinished imported game.
+type clockChoice struct {
+	record  *chess.PGNGame
+	source  string // file it came from
+	options []clockOption
+	cursor  int
+	back    screen // where esc returns
 }
 
 // moveClock is what the mover's clock showed around one move: written to the

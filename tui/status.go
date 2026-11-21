@@ -38,7 +38,7 @@ func (m *Model) statusView() string {
 	}
 	switch m.mode {
 	case modeUndoOffer:
-		return m.st.accent.Render("As "+other+" pedem para voltar o lance. "+turn+", aceitam?  ") + yn
+		return m.st.accent.Render(m.undoStatus()) + yn
 	case modeInput:
 		return m.st.key.Render(": ") + textStyle.Render(m.input) + m.st.accent.Render("▌") + "  " + m.inputHint()
 	case modePromotion:

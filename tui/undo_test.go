@@ -74,6 +74,90 @@ func TestUndoRestoresClocks(t *testing.T) {
 	}
 }
 
+func TestUndoBackToReviewedPosition(t *testing.T) {
+	clk := &fakeTime{time.Unix(0, 0)}
+	m := newDiskModel(t, t.TempDir(), clk, config.Default())
+	m.startGame(clock.TimeControl{Base: 5 * time.Minute, Increment: 3 * time.Second})
+	for _, mv := range [][2]chess.Square{{chess.E2, chess.E4}, {chess.E7, chess.E5}, {chess.G1, chess.F3}, {chess.B8, chess.C6}, {chess.F1, chess.B5}} {
+		clk.advance(4 * time.Second)
+		click(m, mv[0])
+		click(m, mv[1])
+	}
+	key(m, "home")
+	key(m, "]")
+	key(m, "]") // position after 1.e4 e5: White to move
+	key(m, "u")
+	if m.mode != modeUndoOffer || !strings.Contains(m.statusView(), "Brancas pedem para voltar 3 lances. Pretas, aceitam?") {
+		t.Fatalf("mode %v status %q", m.mode, m.statusView())
+	}
+	if !m.reviewing {
+		t.Fatal("the board keeps showing the target position while asking")
+	}
+	key(m, "y")
+	if m.game.Ply() != 2 || m.reviewing || m.game.Turn() != chess.White || len(m.moveTimes) != 2 {
+		t.Fatalf("after: ply %d reviewing %v times %v", m.game.Ply(), m.reviewing, m.moveTimes)
+	}
+	if !strings.Contains(m.notice, "3 lances voltados") {
+		t.Fatalf("notice %q", m.notice)
+	}
+	// White's clock is back to what it showed at the moment of 2.Nf3 (4 s
+	// after 1...e5 started it), without the increment Nf3 earned; Black's to
+	// what it showed after 1...e5.
+	if got, want := m.clock.Remaining(chess.White), 5*time.Minute-4*time.Second; got != want {
+		t.Fatalf("white %v, want %v", got, want)
+	}
+	if got, want := m.clock.Remaining(chess.Black), 5*time.Minute-4*time.Second+3*time.Second; got != want {
+		t.Fatalf("black %v, want %v", got, want)
+	}
+	if !m.clock.Running() {
+		t.Fatal("White's time runs again")
+	}
+
+	// Refusing keeps everything, still reviewing.
+	key(m, "home")
+	key(m, "u")
+	key(m, "n")
+	if m.game.Ply() != 2 || m.mode != modePlay {
+		t.Fatal("a refused take-back keeps the game")
+	}
+	key(m, "end")
+	key(m, "u") // live again: one half-move
+	if !strings.Contains(m.statusView(), "Pretas pedem para voltar o lance") {
+		t.Fatalf("status %q", m.statusView())
+	}
+}
+
+func TestUndoBeforeTheClockJoined(t *testing.T) {
+	pg, err := chess.ParsePGN("1. e4 e5 *")
+	if err != nil {
+		t.Fatal(err)
+	}
+	clk := &fakeTime{time.Unix(0, 0)}
+	m := New(Options{Config: config.Default(), Import: []*chess.PGNGame{pg}, Now: clk.now})
+	m.Update(teaSize(140, 50))
+	m.animate = false
+	runCmd(m, m.Init())
+	m.clocks.cursor = 1 // Blitz 3+2 (no record clocks: Bullet first)
+	press(m, "enter")
+	clk.advance(10 * time.Second)
+	click(m, chess.G1)
+	click(m, chess.F3)
+
+	key(m, "home") // back past the moves that had no clock
+	key(m, "u")
+	key(m, "y")
+	if m.game.Ply() != 0 || m.moveClocks != nil || m.clockFrom != 0 {
+		t.Fatalf("ply %d clocks %v from %d", m.game.Ply(), m.moveClocks, m.clockFrom)
+	}
+	if m.clock.Remaining(chess.White) != 3*time.Minute-10*time.Second+2*time.Second {
+		t.Fatalf("clocks without a record stay as they were: %v", m.clock.Remaining(chess.White))
+	}
+	clk.advance(time.Second)
+	if m.clock.Active() != chess.White || m.clock.Remaining(chess.Black) != 3*time.Minute {
+		t.Fatal("the clock now runs for White, the side to move")
+	}
+}
+
 func TestUndoNotAfterGameOver(t *testing.T) {
 	m := newGame(t, 140, 50, "none")
 	for _, sq := range []chess.Square{chess.F2, chess.F3, chess.E7, chess.E5, chess.G2, chess.G4, chess.D8, chess.H4} {

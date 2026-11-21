@@ -182,6 +182,18 @@ func TestOpenPicker(t *testing.T) {
 		t.Fatal("only .pgn files are listed")
 	}
 	press(m, "enter")
+	if m.screen != screenClocks {
+		t.Fatalf("an unfinished game asks for a time control first: screen %v", m.screen)
+	}
+	press(m, "esc")
+	if m.screen != screenOpen {
+		t.Fatal("esc on the question goes back to the files")
+	}
+	press(m, "enter")
+	for m.clocks.options[m.clocks.cursor].src != clocksOff {
+		press(m, "down")
+	}
+	press(m, "enter")
 	if m.screen != screenGame || m.game.Ply() != 3 || m.clock != nil {
 		t.Fatalf("opened game: screen %v ply %d", m.screen, m.game.Ply())
 	}
@@ -225,5 +237,68 @@ func TestOpenPickerBadFile(t *testing.T) {
 	press(m, "esc")
 	if m.screen != screenMenu {
 		t.Fatal("esc goes back to the menu")
+	}
+}
+
+const twoGames = `[White "Ana"]
+[Black "Bia"]
+[Result "1-0"]
+
+1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7# 1-0
+
+[White "Caio"]
+[Black "?"]
+[Result "*"]
+
+1. d4 d5 *
+
+[White "Quebrada"]
+
+1. e4 e4 *
+`
+
+func TestOpenPickerListsGamesOfAFile(t *testing.T) {
+	dir := t.TempDir()
+	writePGN(t, filepath.Join(dir, "games"), "torneio.pgn", twoGames, time.Unix(0, 0))
+	m := newDiskModel(t, dir, &fakeTime{time.Unix(0, 0)}, config.Default())
+	m.openPicker()
+	press(m, "enter")
+	view := m.View()
+	for _, want := range []string{"torneio.pgn · 2 partidas", "1. Ana x Bia", "1-0 · 4 lances", "2. Caio x Pretas", "* · 1 lances", "1 partida(s) inválida(s) ignorada(s)"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("games list lacks %q:\n%s", want, view)
+		}
+	}
+	press(m, "esc")
+	if m.screen != screenOpen || m.open.games != nil {
+		t.Fatal("esc on the games goes back to the files")
+	}
+	press(m, "enter")
+	press(m, "enter") // Ana x Bia, finished
+	if m.screen != screenGame || m.game.Termination() != chess.Checkmate {
+		t.Fatalf("screen %v termination %v", m.screen, m.game.Termination())
+	}
+}
+
+func TestImportFlagWithSeveralGames(t *testing.T) {
+	games, err := chess.ParsePGNGames(twoGames)
+	if len(games) != 2 || err == nil {
+		t.Fatalf("%d games, err %v", len(games), err)
+	}
+	m := New(Options{Config: config.Default(), Import: games, ImportPath: "/x/torneio.pgn"})
+	m.Update(teaSize(140, 50))
+	runCmd(m, m.Init())
+	if m.screen != screenOpen || len(m.open.games) != 2 {
+		t.Fatalf("screen %v games %d", m.screen, len(m.open.games))
+	}
+	press(m, "down")
+	press(m, "enter") // Caio's unfinished game: the clock question
+	if m.screen != screenClocks {
+		t.Fatalf("screen %v", m.screen)
+	}
+	press(m, "esc")
+	press(m, "esc")
+	if m.screen != screenMenu {
+		t.Fatal("without a file list, esc on the games goes to the menu")
 	}
 }

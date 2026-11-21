@@ -21,6 +21,10 @@ func (m *Model) gameKey(key string) tea.Cmd {
 		if cmd, ok := m.boardKey(key); ok {
 			return cmd
 		}
+		if m.reviewing && key == "u" && m.mode == modePlay {
+			m.requestUndo(m.reviewPly) // take the game back to the position shown
+			return nil
+		}
 		if m.reviewing && key != "q" {
 			return nil // a past position cannot be played on
 		}
@@ -134,7 +138,7 @@ func (m *Model) playKey(key string) tea.Cmd {
 	case "esc":
 		m.clearSelection()
 	case "u":
-		m.requestUndo()
+		m.requestUndo(m.game.Ply() - 1)
 	case "d":
 		m.notice = ""
 		if m.game.ClaimableDraw() != chess.NoTermination {
