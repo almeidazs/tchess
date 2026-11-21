@@ -28,11 +28,22 @@ type Config struct {
 	// TimeControl is the last time control played ("5+3", "none"); the
 	// menu opens on it.
 	TimeControl string `toml:"time_control"`
+
+	// Engine is the UCI engine to play against: a path or a program name.
+	// Empty means Stockfish, looked up on the PATH.
+	Engine string `toml:"engine"`
+	// Opponent is "human" (two players on one terminal) or "computer".
+	Opponent string `toml:"opponent"`
+	// ComputerElo is the computer's strength; 0 means full strength.
+	ComputerElo int `toml:"computer_elo"`
+	// HumanColor is the side the human takes against the computer:
+	// "white", "black" or "random".
+	HumanColor string `toml:"human_color"`
 }
 
 // Default returns the preferences used when there is no file yet.
 func Default() Config {
-	return Config{Sound: true, Flip: true}
+	return Config{Sound: true, Flip: true, Opponent: "human", ComputerElo: 1600, HumanColor: "white"}
 }
 
 // Dir returns ~/.tchess, which holds config.toml and the sound files.
