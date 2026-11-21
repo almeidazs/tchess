@@ -1,6 +1,7 @@
 package chess
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -121,9 +122,72 @@ func (pg *PGNGame) Tag(name string) string {
 // programs write: comments ({...} and ;), variations (skipped), NAGs,
 // move numbers with or without a space, and SAN or coordinate moves.
 func ParsePGN(text string) (*PGNGame, error) {
+	chunks := splitPGN(text)
+	if len(chunks) == 0 {
+		return parseGame("")
+	}
+	return parseGame(chunks[0])
+}
+
+// ParsePGNGames reads every game of a PGN text, in order. A game that
+// cannot be read is left out; the error then tells which ones (numbered
+// from 1) and why, while the games returned are still usable.
+func ParsePGNGames(text string) ([]*PGNGame, error) {
+	var games []*PGNGame
+	var errs []error
+	for i, chunk := range splitPGN(text) {
+		pg, err := parseGame(chunk)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("game %d: %w", i+1, err))
+			continue
+		}
+		games = append(games, pg)
+	}
+	return games, errors.Join(errs...)
+}
+
+// splitPGN cuts a PGN text into games: a new game starts at a tag line
+// that follows movetext. Lines inside a {comment} never count as tags.
+func splitPGN(text string) []string {
 	text = strings.TrimPrefix(text, "\ufeff") // byte order mark
-	pg := &PGNGame{}
 	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+	var chunks []string
+	var cur strings.Builder
+	inMovetext, inComment := false, false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if !inComment && strings.HasPrefix(trimmed, "[") && inMovetext {
+			chunks = append(chunks, cur.String())
+			cur.Reset()
+			inMovetext = false
+		}
+		if trimmed != "" && !inComment && !strings.HasPrefix(trimmed, "[") && !strings.HasPrefix(line, "%") {
+			inMovetext = true
+		}
+	scan:
+		for _, c := range line {
+			switch {
+			case c == '{':
+				inComment = true
+			case c == '}':
+				inComment = false
+			case c == ';' && !inComment:
+				break scan // the rest of the line is a comment
+			}
+		}
+		cur.WriteString(line)
+		cur.WriteByte('\n')
+	}
+	if strings.TrimSpace(cur.String()) != "" {
+		chunks = append(chunks, cur.String())
+	}
+	return chunks
+}
+
+// parseGame reads one game: its tags, then its movetext.
+func parseGame(text string) (*PGNGame, error) {
+	pg := &PGNGame{}
+	lines := strings.Split(text, "\n")
 
 	// Tag section: every '[' line before the movetext.
 	i := 0
@@ -157,14 +221,10 @@ func ParsePGN(text string) (*PGNGame, error) {
 	pg.Game = g
 	pg.Result = parseResult(pg.Tag("Result"))
 
-	// Movetext, up to the result token or the next game's tags.
 	var mt strings.Builder
 	for ; i < len(lines); i++ {
 		if strings.HasPrefix(lines[i], "%") { // escape line
 			continue
-		}
-		if strings.HasPrefix(strings.TrimSpace(lines[i]), "[") && mt.Len() > 0 {
-			break
 		}
 		mt.WriteString(lines[i])
 		mt.WriteByte('\n')

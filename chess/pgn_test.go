@@ -206,3 +206,52 @@ func TestPositionAt(t *testing.T) {
 		t.Fatalf("ply 2: %s", p.FEN())
 	}
 }
+
+func TestParsePGNGames(t *testing.T) {
+	text := `[Event "One"]
+[Result "1-0"]
+
+1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7# 1-0
+
+[Event "Two"]
+[Result "*"]
+
+1. d4 {a comment that wraps
+[%clk 0:05:00] onto a line starting with a bracket} d5 ; and { here
+2. c4 *
+
+[Event "Broken"]
+
+1. e4 e4 *
+
+[Event "Four"]
+
+1. Nf3 *
+`
+	games, err := ParsePGNGames(text)
+	if len(games) != 3 {
+		t.Fatalf("%d games, want 3 (the broken one skipped)", len(games))
+	}
+	if err == nil || !strings.Contains(err.Error(), "game 3") {
+		t.Fatalf("error should name game 3: %v", err)
+	}
+	for i, want := range []struct {
+		event string
+		ply   int
+	}{{"One", 7}, {"Two", 3}, {"Four", 1}} {
+		if games[i].Tag("Event") != want.event || games[i].Game.Ply() != want.ply {
+			t.Errorf("game %d: %q with %d plies", i, games[i].Tag("Event"), games[i].Game.Ply())
+		}
+	}
+	if !strings.Contains(games[1].Comments[0], "[%clk 0:05:00]") {
+		t.Fatalf("a bracket line inside a comment is not a new game: %q", games[1].Comments)
+	}
+
+	first, err := ParsePGN(text)
+	if err != nil || first.Tag("Event") != "One" {
+		t.Fatalf("ParsePGN reads the first game: %v", err)
+	}
+	if games, err := ParsePGNGames(""); len(games) != 0 || err != nil {
+		t.Fatalf("empty text: %v %v", games, err)
+	}
+}
